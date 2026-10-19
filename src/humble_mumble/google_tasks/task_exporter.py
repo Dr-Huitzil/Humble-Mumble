@@ -27,8 +27,8 @@ from datetime import datetime
 from collections import defaultdict
 import openpyxl
 
-import config
-from utils import is_valid_serial, normalize_hostname, safe_float, safe_int
+from humble_mumble.core import config
+from humble_mumble.core.utils import is_valid_serial, normalize_hostname, safe_float, safe_int
 
 def _calculate_priority(subtasks, days_inactive, presence):
     """
@@ -446,27 +446,36 @@ def Counter_subtasks(devices):
     return dict(counts)
 
 
-if __name__ == "__main__":
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+
     print("=" * 72)
     print("TASK EXPORTER — GOOGLE TASKS CSV GENERATOR")
     print("=" * 72)
 
     # Locate report workbook
     target_report = None
-    if len(sys.argv) > 1 and os.path.exists(sys.argv[1]):
-        target_report = sys.argv[1]
+    if len(argv) > 0 and os.path.exists(argv[0]):
+        target_report = argv[0]
     else:
         # Auto-detect latest in reports/Extensive Reports/
-        extensive_dir = os.path.join("reports", "Extensive Reports")
-        if os.path.exists(extensive_dir):
-            candidates = [os.path.join(extensive_dir, f) for f in os.listdir(extensive_dir) if f.endswith(".xlsx") and not f.startswith("~$")]
-            if candidates:
-                candidates.sort(key=lambda x: os.path.getmtime(x), reverse=True)
-                target_report = candidates[0]
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+        search_dirs = [
+            os.path.join(os.getcwd(), "reports", "Extensive Reports"),
+            os.path.join(repo_root, "reports", "Extensive Reports")
+        ]
+        candidates = []
+        for d in search_dirs:
+            if os.path.exists(d):
+                candidates.extend([os.path.join(d, f) for f in os.listdir(d) if f.endswith(".xlsx") and not f.startswith("~$")])
+        if candidates:
+            candidates.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            target_report = candidates[0]
 
     if not target_report:
         print("ERROR: No Extensive Report workbook found to extract tasks from.")
-        print("Usage: python task_exporter.py [path_to_extensive_report.xlsx]")
+        print("Usage: python -m humble_mumble.google_tasks.task_exporter [path_to_extensive_report.xlsx]")
         sys.exit(1)
 
     print(f"Reading Extensive Report from: {target_report}...")
@@ -480,3 +489,6 @@ if __name__ == "__main__":
     print(f"\nSingle Master Tasks CSV generated at:")
     print(f"  -> {res['master_file']}")
     print("=" * 72)
+
+if __name__ == "__main__":
+    main()

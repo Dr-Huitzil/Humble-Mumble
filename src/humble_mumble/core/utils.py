@@ -8,7 +8,7 @@ Centralizing these removes duplicate implementations across report builders.
 from datetime import datetime, date
 import re
 from openpyxl.styles import Font, Border, Side
-import config
+from humble_mumble.core import config
 
 GENERIC_SERIALS = {
     "N/A", "NONE", "UNKNOWN", "", "TO BE FILLED BY O.E.M.", "SYSTEM SERIAL NUMBER",

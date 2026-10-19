@@ -7,7 +7,11 @@ echo   ACTIVE DIRECTORY INVENTORY & AUDIT PIPELINE
 echo ============================================================
 echo.
 echo [Step 1/2] Querying Active Directory and exporting raw data...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Export_AD_Computers_Raw.ps1
+if exist ".\Export_AD_Computers_Raw.ps1" (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Export_AD_Computers_Raw.ps1
+) else (
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\src\humble_mumble\ad\Export_AD_Computers_Raw.ps1
+)
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Active Directory export failed. Ensure you have network connectivity to the domain.
     pause
@@ -16,7 +20,8 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [Step 2/2] Generating executive Excel inventory report...
-python build_ad_report.py
+set PYTHONPATH=%~dp0src;%PYTHONPATH%
+python -m humble_mumble.ad.build_ad_report
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Excel report generation failed.
     pause
@@ -28,7 +33,11 @@ echo ============================================================
 echo   PIPELINE COMPLETE!
 echo ============================================================
 echo Opening generated report...
-for /f "delims=" %%F in ('dir /b /o:-d AD_Computer_Inventory_Report_*.xlsx') do (
+for /f "delims=" %%F in ('dir /b /o:-d AD_Computer_Inventory_Report_*.xlsx 2^>nul') do (
+    start "" "%%F"
+    goto :done
+)
+for /f "delims=" %%F in ('dir /b /s /o:-d "reports\AD Reports\AD_Computer_Inventory_Report_*.xlsx" 2^>nul') do (
     start "" "%%F"
     goto :done
 )

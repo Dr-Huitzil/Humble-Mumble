@@ -60,10 +60,13 @@ def find_best_ninja_csvs(search_dirs=None, max_age_days=7):
     it is marked as stale, but still returned under 'newest_*' for fallback use.
     """
     if search_dirs is None:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         search_dirs = [
             os.getcwd(),
             os.path.join(os.getcwd(), "data"),
             os.path.join(os.getcwd(), "samples"),
+            os.path.join(repo_root, "data"),
+            os.path.join(repo_root, "samples"),
             os.path.join(os.getcwd(), "archive"),
             os.path.expanduser("~/Downloads")
         ]
@@ -151,10 +154,13 @@ def find_best_ad_csv(search_dirs=None, max_age_days=7):
     Scans for the newest Active Directory raw export (Computers_Raw_*.csv).
     """
     if search_dirs is None:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         search_dirs = [
             os.getcwd(),
             os.path.join(os.getcwd(), "data"),
             os.path.join(os.getcwd(), "samples"),
+            os.path.join(repo_root, "data"),
+            os.path.join(repo_root, "samples"),
             os.path.join(os.getcwd(), "archive"),
             os.path.expanduser("~/Downloads")
         ]

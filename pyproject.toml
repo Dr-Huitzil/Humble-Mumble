@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "humble-mumble"
+version = "1.0.0"
+description = "Multi-Source Fleet Reporting & Google Tasks Orchestration Studio"
+readme = "README.md"
+authors = [{ name = "Humble Mumble Contributors" }]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "openpyxl>=3.1.0",
+    "google-api-python-client>=2.100.0",
+    "google-auth-oauthlib>=1.2.0",
+    "google-auth-httplib2>=0.2.0",
+]
+
+[project.scripts]
+humble-mumble = "humble_mumble.gui.app_gui:main"
+humble-tasks = "humble_mumble.google_tasks.google_tasks_gui:main"
+humble-ninja = "humble_mumble.ninjaone.build_inventory:main"
+humble-ad = "humble_mumble.ad.build_ad_report:main"
+humble-huntress = "humble_mumble.huntress.build_huntress_report:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

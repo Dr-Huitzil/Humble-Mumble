@@ -17,8 +17,9 @@ import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
-import config
-from utils import clean_ou_token, create_kpi_card
+from humble_mumble.core import config
+from humble_mumble.core.utils import clean_ou_token, create_kpi_card
+from humble_mumble.core.detect_files import find_best_ad_csv
 
 def parse_ad_record(row):
     name = str(row.get("Name", "") or "").strip()
@@ -339,21 +340,29 @@ def build_report(csv_path, output_xlsx=None, inv_title="Inventory", dash_title="
         )
     return output_xlsx
 
-if __name__ == "__main__":
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
     target_csv = None
-    if len(sys.argv) > 1:
-        target_csv = sys.argv[1]
+    if len(argv) > 0:
+        target_csv = argv[0]
     else:
-        raw_files = sorted(glob.glob("Computers_Raw_*.csv"), key=os.path.getmtime, reverse=True)
-        if not raw_files:
-            raw_files = sorted(glob.glob(os.path.join("data", "Computers_Raw_*.csv")) + glob.glob(os.path.join("archive", "Computers_Raw_*.csv")), key=os.path.getmtime, reverse=True)
-        if raw_files:
-            target_csv = raw_files[0]
+        detected = find_best_ad_csv()
+        target_csv = detected.get("ad_raw_file")
+        if not target_csv:
+            raw_files = sorted(glob.glob("Computers_Raw_*.csv"), key=os.path.getmtime, reverse=True)
+            if not raw_files:
+                raw_files = sorted(glob.glob(os.path.join("data", "Computers_Raw_*.csv")) + glob.glob(os.path.join("archive", "Computers_Raw_*.csv")), key=os.path.getmtime, reverse=True)
+            if raw_files:
+                target_csv = raw_files[0]
             
     if not target_csv or not os.path.exists(target_csv):
         print("Error: No Computers_Raw CSV file found.")
         sys.exit(1)
         
-    out_file = sys.argv[2] if len(sys.argv) > 2 else None
+    out_file = argv[1] if len(argv) > 1 else None
     print(f"Reading data from: {target_csv}")
     build_report(target_csv, output_xlsx=out_file)
+
+if __name__ == "__main__":
+    main()

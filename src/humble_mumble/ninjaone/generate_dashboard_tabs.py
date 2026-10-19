@@ -20,11 +20,11 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, DoughnutChart, Reference
 
-import config
-from utils import draw_kpi_cards, is_valid_serial, normalize_hostname, safe_float, safe_int
+from humble_mumble.core import config
+from humble_mumble.core.utils import draw_kpi_cards, is_valid_serial, normalize_hostname, safe_float, safe_int
 
 # Use centralized styles from config
-from config import (
+from humble_mumble.core.config import (
     font_title, font_subtitle, font_section, font_card_num, font_card_label, font_card_sub,
     font_tbl_header, font_tbl_data, font_tbl_bold, font_tbl_total,
     fill_navy_header, fill_sub_header, fill_accent_header, fill_kpi_card,
@@ -1896,17 +1896,23 @@ def generate_dashboards(wb_or_path, huntress_csv=None, skip_lifecycle=False):
     print("Dashboard tabs successfully added and verified!")
     return wb
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
-        wb_target = sys.argv[1]
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
+
+    if len(argv) > 0 and not argv[0].startswith("--"):
+        wb_target = argv[0]
     else:
         candidates = glob.glob("Ninja Inventory*.xlsx") or glob.glob(os.path.join("reports", "Ninja Reports", "Ninja Inventory*.xlsx"))
         wb_target = sorted(candidates, key=os.path.getmtime, reverse=True)[0] if candidates else "Ninja Inventory.xlsx"
 
-    cli_skip_lifecycle = "--no-ad" in sys.argv
+    cli_skip_lifecycle = "--no-ad" in argv
     cli_huntress = None
-    for i, a in enumerate(sys.argv):
-        if a == "--huntress" and i + 1 < len(sys.argv):
-            cli_huntress = sys.argv[i + 1]
+    for i, a in enumerate(argv):
+        if a == "--huntress" and i + 1 < len(argv):
+            cli_huntress = argv[i + 1]
 
     generate_dashboards(wb_target, huntress_csv=cli_huntress, skip_lifecycle=cli_skip_lifecycle)
+
+if __name__ == "__main__":
+    main()

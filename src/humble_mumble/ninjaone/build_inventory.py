@@ -20,11 +20,12 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-import config
-from utils import parse_date as parse_ninja_date, safe_float, safe_int, normalize_hostname
-from generate_dashboard_tabs import generate_dashboards
-from build_ad_report import parse_ad_csv, build_ad_inventory_tab, build_ad_dashboard_tab
-from build_huntress_report import parse_huntress_csv, build_huntress_inventory_tab, build_huntress_dashboard_tab
+from humble_mumble.core import config
+from humble_mumble.core.utils import parse_date as parse_ninja_date, safe_float, safe_int, normalize_hostname
+from humble_mumble.ninjaone.generate_dashboard_tabs import generate_dashboards
+from humble_mumble.ad.build_ad_report import parse_ad_csv, build_ad_inventory_tab, build_ad_dashboard_tab
+from humble_mumble.huntress.build_huntress_report import parse_huntress_csv, build_huntress_inventory_tab, build_huntress_dashboard_tab
+from humble_mumble.core.detect_files import find_best_ninja_csvs
 
 # Regex for volume parsing
 re_cap = re.compile(r'\(([\d\.]+)\s*GiB\)')
@@ -495,7 +496,7 @@ def build_inventory_sheet(csv_details_path, csv_custom_path, output_excel_path, 
     # -------------------------------------------------------------------------
     if csv_huntress_path and csv_ad_path:
         try:
-            from task_exporter import export_flagged_devices_tasks
+            from humble_mumble.google_tasks.task_exporter import export_flagged_devices_tasks
             # Route tasks to reports/Tasks/
             out_dir = os.path.dirname(os.path.abspath(output_excel_path))
             if os.path.basename(out_dir).lower() == "extensive reports":
@@ -511,8 +512,9 @@ def build_inventory_sheet(csv_details_path, csv_custom_path, output_excel_path, 
         except Exception as e:
             print(f"Notice: Could not generate tasks export: {e}")
 
-if __name__ == "__main__":
-    from detect_files import find_best_ninja_csvs
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
 
     today_str = datetime.now().strftime("%m%d%Y")
     
@@ -521,19 +523,19 @@ if __name__ == "__main__":
     
     # Parse positional or named arguments
     # Usage: python build_inventory.py [details.csv] [custom.csv] [output.xlsx] [huntress.csv] [ad.csv]
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    args = [a for a in argv if not a.startswith("--")]
     huntress_cli = None
     ad_cli = None
-    for i, a in enumerate(sys.argv):
-        if a == "--huntress" and i + 1 < len(sys.argv):
-            huntress_cli = sys.argv[i + 1]
-        elif a == "--ad" and i + 1 < len(sys.argv):
-            ad_cli = sys.argv[i + 1]
+    for i, a in enumerate(argv):
+        if a == "--huntress" and i + 1 < len(argv):
+            huntress_cli = argv[i + 1]
+        elif a == "--ad" and i + 1 < len(argv):
+            ad_cli = argv[i + 1]
 
     d1 = args[0] if len(args) > 0 else detected.get("details_file")
     d0 = args[1] if len(args) > 1 else detected.get("custom_file")
     out_file = args[2] if len(args) > 2 else f"Ninja Inventory {today_str}.xlsx"
-    if "--no-huntress" in sys.argv:
+    if "--no-huntress" in argv:
         dh = None
     else:
         dh = huntress_cli or (args[3] if len(args) > 3 else detected.get("huntress_file"))
@@ -556,3 +558,6 @@ if __name__ == "__main__":
 
     build_inventory_sheet(d1, d0, out_file, csv_huntress_path=dh, csv_ad_path=dad)
     print(f"DONE! Workbook ready at: {out_file}")
+
+if __name__ == "__main__":
+    main()

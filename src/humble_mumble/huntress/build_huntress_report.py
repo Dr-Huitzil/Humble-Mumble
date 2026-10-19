@@ -19,8 +19,9 @@ from openpyxl.utils import get_column_letter
 from openpyxl.chart import DoughnutChart, BarChart, Reference
 from openpyxl.worksheet.table import Table, TableStyleInfo
 
-import config
-from utils import parse_date, create_kpi_card
+from humble_mumble.core import config
+from humble_mumble.core.utils import parse_date, create_kpi_card
+from humble_mumble.core.detect_files import find_best_ninja_csvs
 
 HUNTRESS_HEADERS = config.HUNTRESS_STANDALONE_HEADERS
 HUNTRESS_COL_WIDTHS = config.HUNTRESS_STANDALONE_COL_WIDTHS
@@ -330,12 +331,13 @@ def build_huntress_report(csv_path, output_xlsx=None, inv_title="Inventory", das
         )
     return output_xlsx
 
-if __name__ == "__main__":
-    from detect_files import find_best_ninja_csvs
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv[1:]
 
     csv_in = None
-    if len(sys.argv) > 1:
-        csv_in = sys.argv[1]
+    if len(argv) > 0:
+        csv_in = argv[0]
     else:
         detected = find_best_ninja_csvs()
         csv_in = detected.get("huntress_file")
@@ -344,5 +346,8 @@ if __name__ == "__main__":
         print("Error: No Huntress CSV file found.")
         sys.exit(1)
 
-    out_file = sys.argv[2] if len(sys.argv) > 2 else None
+    out_file = argv[1] if len(argv) > 1 else None
     build_huntress_report(csv_in, out_file)
+
+if __name__ == "__main__":
+    main()

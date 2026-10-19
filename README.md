@@ -167,34 +167,57 @@ python google_tasks_gui.py
 
 ---
 
-## Repository Structure
+## Repository Structure & Modular Architecture
+
+Humble Mumble is organized as an enterprise Python package structured by environment under `src/humble_mumble/`:
 
 ```
 Humble Mumble/
-├── Launch_Studio.bat               # 1-click launcher for the Executive Desktop Studio
-├── Launch_Google_Tasks_Sync.bat    # 1-click launcher for Google Tasks Fleet Sync Studio
-├── app_gui.py                      # Desktop GUI (Tkinter) for all report modes
-├── google_tasks_gui.py             # Desktop GUI for Google Tasks sync & preview
-├── google_tasks_sync.py            # OAuth 2.0 sync engine with rate-pacing & retry logic
-│
-├── config.py                       # Design tokens, palette, column definitions & thresholds
-├── organization_config.example.json# Template for custom company prefixes and locations
-├── utils.py                        # Safe date/number parsing, KPI cards & string formatters
-├── detect_files.py                 # Header sniffer & timestamp auto-discovery for CSV exports
-│
-├── build_inventory.py              # Core generator for NinjaOne & Extensive Inventory workbooks
-├── generate_dashboard_tabs.py      # Multi-tab executive dashboard & KPI chart builder
-├── build_ad_report.py              # Active Directory inventory & hygiene report builder
-├── build_huntress_report.py        # Standalone Huntress EDR report builder
-│
-├── task_exporter.py               # Deduplicated flagged devices & Google Tasks CSV exporter
-├── Export_AD_Computers_Raw.ps1     # PowerShell script to query Active Directory domain objects
-├── run_ad_pipeline.bat             # Batch runner for AD export + report generation
-├── run_pipeline.bat                # Batch runner for Ninja inventory generation
+├── pyproject.toml                  # Standard Python packaging (PEP 517/621) with console CLI commands
 ├── requirements.txt                # Python package dependencies
 ├── LICENSE                         # MIT Open Source License
+├── README.md                       # Comprehensive documentation & quick start
+├── organization_config.example.json# Template for custom company prefixes and locations
+├── credentials.json.example        # Template for Google Tasks OAuth 2.0 Desktop credentials
 │
-├── samples/                        # Synthetic mock CSV files for instant testing
+├── Launch_Studio.bat               # 1-click launcher for the Executive Desktop Studio
+├── Launch_Google_Tasks_Sync.bat    # 1-click launcher for Google Tasks Fleet Sync Studio
+├── run_pipeline.bat                # 1-click runner for NinjaOne inventory pipeline
+├── run_ad_pipeline.bat             # 1-click runner for Active Directory export & report pipeline
+├── app_gui.py                      # Root launcher script for the Desktop Studio
+├── google_tasks_gui.py             # Root launcher script for Google Tasks sync studio
+├── Export_AD_Computers_Raw.ps1     # Standalone Active Directory PowerShell discovery script
+│
+├── src/
+│   └── humble_mumble/              # Core enterprise Python package
+│       ├── __init__.py             # Package root & metadata
+│       ├── __main__.py             # Supports `python -m humble_mumble`
+│       │
+│       ├── core/                   # Shared Foundation & Infrastructure
+│       │   ├── config.py           # Design tokens, color palette, column definitions & thresholds
+│       │   ├── utils.py            # Safe parsing, KPI card builders, date & serial helpers
+│       │   └── detect_files.py     # Header sniffing & timestamp auto-discovery for CSV exports
+│       │
+│       ├── ninjaone/               # NinjaOne RMM Environment
+│       │   ├── build_inventory.py  # Core NinjaOne & Extensive 12-tab workbook generator
+│       │   └── generate_dashboard_tabs.py # Visual KPIs, donut charts & summary dashboards
+│       │
+│       ├── ad/                     # Active Directory Domain Environment
+│       │   ├── build_ad_report.py  # Standalone Active Directory inventory & hygiene report builder
+│       │   └── Export_AD_Computers_Raw.ps1 # RSAT Active Directory query & CSV export script
+│       │
+│       ├── huntress/               # Huntress EDR Security Environment
+│       │   └── build_huntress_report.py # Standalone Huntress EDR inventory & audit report builder
+│       │
+│       ├── google_tasks/           # Google Tasks Remediation Environment
+│       │   ├── task_exporter.py    # Deduplicated flagged devices & Google Tasks CSV exporter
+│       │   ├── google_tasks_sync.py# OAuth 2.0 sync engine with exponential backoff & rate pacing
+│       │   └── google_tasks_gui.py # Interactive desktop UI for Google Tasks sync & preview
+│       │
+│       └── gui/                    # Desktop Presentation Layer
+│           └── app_gui.py          # Unified multi-mode reporting studio (Tkinter)
+│
+├── samples/                        # Synthetic mock CSV files for instant offline testing
 │   ├── sample_ninja_device_details.csv
 │   ├── sample_ninja_custom_fields.csv
 │   ├── sample_huntress_agents.csv
@@ -206,6 +229,36 @@ Humble Mumble/
     ├── Huntress Reports/
     ├── Ninja Reports/
     └── Tasks/
+```
+
+### CLI Commands & Module Execution
+
+In addition to the batch launchers and desktop GUIs, you can execute commands directly:
+
+```bash
+# Install in editable mode (optional, for global CLI commands)
+pip install -e .
+
+# Launch Desktop Reporting Studio
+humble-mumble
+# or: python -m humble_mumble
+# or: python app_gui.py
+
+# Launch Google Tasks Studio
+humble-tasks
+# or: python -m humble_mumble.google_tasks.google_tasks_gui
+
+# Run NinjaOne Inventory Pipeline directly
+humble-ninja
+# or: python -m humble_mumble.ninjaone.build_inventory
+
+# Run Active Directory Report directly
+humble-ad
+# or: python -m humble_mumble.ad.build_ad_report
+
+# Run Huntress EDR Report directly
+humble-huntress
+# or: python -m humble_mumble.huntress.build_huntress_report
 ```
 
 ---

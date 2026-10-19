@@ -78,15 +78,28 @@ def _extract_computer_name(task_title):
         return t[13:].strip().upper()
     return t.upper()
 
+def _resolve_config_path(path_str):
+    if not path_str:
+        return path_str
+    if os.path.exists(path_str):
+        return path_str
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    root_candidate = os.path.join(repo_root, path_str)
+    if os.path.exists(root_candidate):
+        return root_candidate
+    return path_str
+
 def get_auth_status(credentials_path="credentials.json", token_path="token.json"):
     """Check current Google Tasks authentication status."""
-    has_creds = os.path.exists(credentials_path)
-    has_token = os.path.exists(token_path)
+    resolved_creds = _resolve_config_path(credentials_path)
+    resolved_token = _resolve_config_path(token_path)
+    has_creds = os.path.exists(resolved_creds)
+    has_token = os.path.exists(resolved_token)
     is_valid = False
 
     if has_token:
         try:
-            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+            creds = Credentials.from_authorized_user_file(resolved_token, SCOPES)
             if creds and creds.valid:
                 is_valid = True
             elif creds and creds.expired and creds.refresh_token:
@@ -107,10 +120,12 @@ def authenticate_google_tasks(credentials_path="credentials.json", token_path="t
     Opens the default browser for official Google Sign-In on first run.
     Caches token in token_path for subsequent automatic access.
     """
+    resolved_creds = _resolve_config_path(credentials_path)
+    resolved_token = _resolve_config_path(token_path)
     creds = None
-    if os.path.exists(token_path):
+    if os.path.exists(resolved_token):
         try:
-            creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+            creds = Credentials.from_authorized_user_file(resolved_token, SCOPES)
         except Exception:
             creds = None
 

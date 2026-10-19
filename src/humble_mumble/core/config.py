@@ -56,9 +56,17 @@ CLINIC_NAME_CANONICAL = {
 
 # Auto-load custom organization configuration if present
 _cfg_file = None
-for _candidate in ["organization_config.local.json", "organization_config.json"]:
-    if os.path.exists(_candidate):
-        _cfg_file = _candidate
+_search_dirs = [
+    os.getcwd(),
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+]
+for _d in _search_dirs:
+    for _candidate_name in ["organization_config.local.json", "organization_config.json"]:
+        _cand_path = os.path.join(_d, _candidate_name)
+        if os.path.exists(_cand_path):
+            _cfg_file = _cand_path
+            break
+    if _cfg_file:
         break
 
 if _cfg_file:

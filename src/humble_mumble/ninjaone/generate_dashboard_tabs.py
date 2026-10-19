@@ -20,6 +20,7 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, DoughnutChart, Reference
 from openpyxl.chart.label import DataLabelList
+from openpyxl.worksheet.table import Table, TableStyleInfo
 
 from humble_mumble.core import config
 from humble_mumble.core.utils import draw_kpi_cards, is_valid_serial, normalize_hostname, safe_float, safe_int
@@ -1076,6 +1077,25 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         up_days = d.get("Uptime") or 0
 
         match_ad = ad_by_name.get(dev_name.upper()) or ad_by_norm.get(normalize_hostname(dev_name))
+        os_str = str(d.get("OS") or "").strip()
+
+        # Filter out infrastructure / server items
+        if (
+            "Server" in role
+            or "Domain Controller" in role
+            or "Server" in os_str
+            or "Servers" in loc
+            or "Infrastructure" in loc
+            or (match_ad and (
+                "Domain Controller" in match_ad.get("DeviceType", "")
+                or "Server" in match_ad.get("DeviceType", "")
+                or "Server" in match_ad.get("OS", "")
+                or "Servers" in match_ad.get("Clinic", "")
+                or "Domain Controllers" in match_ad.get("Clinic", "")
+                or "Infrastructure" in match_ad.get("Clinic", "")
+            ))
+        ):
+            continue
 
         if match_ad:
             ad_status = match_ad["Status"]
@@ -1158,13 +1178,20 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         a_name_norm = normalize_hostname(a["Name"])
         if a_name_u not in ninja_names and a_name_norm not in ninja_norms:
             if a["Status"].lower() in ["enabled", "true"]:
-                if "Domain Controller" in a["DeviceType"] or "Server" in a["DeviceType"] or "Server" in a["OS"]:
-                    role_ident = "Infrastructure / Server (Not in Workstation Inventory)"
-                else:
-                    role_ident = "Active Directory Workstation - Missing NinjaOne Agent"
+                # Filter out infrastructure / server items
+                if (
+                    "Domain Controller" in a.get("DeviceType", "")
+                    or "Server" in a.get("DeviceType", "")
+                    or "Server" in a.get("OS", "")
+                    or "Servers" in a.get("Clinic", "")
+                    or "Domain Controllers" in a.get("Clinic", "")
+                    or "Infrastructure" in a.get("Clinic", "")
+                ):
+                    continue
+                role_ident = "Active Directory Workstation - Missing NinjaOne Agent"
                 unmanaged_ad.append((a, role_ident))
 
-    cnt_total_ninja = len(inventory_data)
+    cnt_total_ninja = len(audit_devices)
     cnt_synced = sum(1 for d in audit_devices if d["Category"] in ["SYNCHRONIZED_ACTIVE", "OU_MISPLACED", "AD_LAGGING"])
     cnt_ad_disabled = sum(1 for d in audit_devices if d["Category"] == "AD_DISABLED")
     cnt_missing_ad = sum(1 for d in audit_devices if d["Category"] == "MISSING_FROM_AD")
@@ -1239,6 +1266,18 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
                 cell.number_format = '#,##0'
 
         r_row += 1
+
+    # Convert Table 1 into an official Excel Table
+    if r_row - 1 >= 9:
+        tbl_ad_fleet = Table(displayName="Table_AD_FleetSync", ref=f"A8:M{r_row - 1}")
+        tbl_ad_fleet.tableStyleInfo = TableStyleInfo(
+            name="TableStyleLight8",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False
+        )
+        ws_ad_ref.add_table(tbl_ad_fleet)
 
     # Table 2: Clinic AD Synchronization Summary
     ws_ad_ref.cell(7, 15).value = "Clinic AD Synchronization Summary"
@@ -1362,7 +1401,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
     r_unm = r_row + 3
     ws_ad_ref.cell(r_unm, 1).value = f"Active Directory Computers Not Managed in NinjaOne Fleet ({len(unmanaged_ad)} Computers)"
     ws_ad_ref.cell(r_unm, 1).font = font_section
-    ws_ad_ref.cell(r_unm + 1, 1).value = "Domain Controllers, Production Servers & Unenrolled Computers in Active Directory"
+    ws_ad_ref.cell(r_unm + 1, 1).value = "Unenrolled Workstations & Standalone Computers in Active Directory (Excludes Servers)"
     ws_ad_ref.cell(r_unm + 1, 1).font = font_subtitle
 
     headers_unm = [
@@ -1405,12 +1444,23 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
                 cell.number_format = '#,##0'
         r_row_u += 1
 
+    # Convert Table 3 into an official Excel Table
+    if r_row_u - 1 >= r_unm + 3:
+        tbl_ad_unm = Table(displayName="Table_AD_UnmanagedComputers", ref=f"A{r_unm + 2}:K{r_row_u - 1}")
+        tbl_ad_unm.tableStyleInfo = TableStyleInfo(
+            name="TableStyleLight8",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False
+        )
+        ws_ad_ref.add_table(tbl_ad_unm)
+
     ws_widths = {
-        1: 18, 2: 24, 3: 16, 4: 20, 5: 14, 6: 18, 7: 14, 8: 24, 9: 20, 10: 16,
-        11: 24, 12: 66, 13: 57, 14: 3, 15: 28, 16: 12, 17: 12, 18: 14, 19: 14, 20: 14
+        1: 18, 2: 24, 3: 26, 4: 20, 5: 28, 6: 18, 7: 18, 8: 24, 9: 20, 10: 16,
+        11: 45, 12: 66, 13: 57, 14: 3, 15: 28, 16: 12, 17: 12, 18: 14, 19: 14, 20: 14
     }
     for c_idx, w in ws_widths.items():
-        ws_ad_ref.column_dimensions[get_column_letter(c_idx)].width = w
         ws_ad_ref.column_dimensions[get_column_letter(c_idx)].width = w
 
     ws_ad_ref.freeze_panes = "C9"
@@ -1468,6 +1518,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         role = d.get("Role") or "Workstation"
         model = d.get("Model") or "Unknown"
         user = d.get("User") or "N/A"
+        os_str = str(d.get("OS") or "").strip()
 
         # Prioritize Serial Number matching when valid; fall back to Hostname for VMs/generic serials
         match_h = None
@@ -1481,6 +1532,17 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
                 cand_sn = str(candidate.get("Serial") or "").strip().upper()
                 if not is_valid_serial(dev_sn) or not is_valid_serial(cand_sn):
                     match_h = candidate
+
+        # Filter out infrastructure / server items
+        if (
+            "Server" in role
+            or "Domain Controller" in role
+            or "Server" in os_str
+            or "Servers" in loc
+            or "Infrastructure" in loc
+            or (match_h and "Server" in match_h.get("OS", ""))
+        ):
+            continue
 
         if match_h:
             h_agent = match_h["Agent"]
@@ -1583,7 +1645,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         if not is_managed:
             os_name = a["OS"]
             if "Server" in os_name:
-                role_ident = "Windows Server - Infrastructure (Not in Workstation Inventory)"
+                continue  # Filter out infrastructure / server items!
             elif "macOS" in os_name or "Mac" in os_name:
                 role_ident = "macOS Device - Standalone / Unmanaged in Ninja"
             elif "Windows 11" in os_name or "Windows 10" in os_name:
@@ -1592,7 +1654,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
                 role_ident = "Standalone Endpoint - Missing from NinjaOne RMM"
             unmanaged_huntress.append((a, role_ident))
 
-    cnt_total_ninja = len(inventory_data)
+    cnt_total_ninja = len(audit_devices)
     cnt_protected_active = sum(1 for d in audit_devices if d["Category"] == "PROTECTED_ACTIVE")
     cnt_protected_lagging = sum(1 for d in audit_devices if d["Category"] == "PROTECTED_LAGGING")
     cnt_total_protected = cnt_protected_active + cnt_protected_lagging
@@ -1612,7 +1674,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         ("PROTECTED FLEET", f"{cnt_total_protected:,} Units", f"{pct_cov:.1f}% EDR Coverage", False),
         ("CRITICAL GAP (ONLINE)", f"{cnt_missing_online:,} Units", "Active Device / No Agent", True),
         ("DROPPED (>90D INACTIVE)", f"{cnt_dropped_inact:,} Units", "Inactivity Removal Window", True),
-        ("UNMANAGED IN NINJA", f"{len(unmanaged_huntress):,} Units", "Huntress Servers / Standalone", False)
+        ("UNMANAGED IN NINJA", f"{len(unmanaged_huntress):,} Units", "Huntress Workstations / Standalone", False)
     ]
     draw_kpi_cards(ws6, kpis6)
 
@@ -1670,6 +1732,18 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
                 cell.number_format = '#,##0'
 
         r_hp += 1
+
+    # Convert Table 1 into an official Excel Table
+    if r_hp - 1 >= 9:
+        tbl_hunt_fleet = Table(displayName="Table_Huntress_FleetSync", ref=f"A8:M{r_hp - 1}")
+        tbl_hunt_fleet.tableStyleInfo = TableStyleInfo(
+            name="TableStyleLight8",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False
+        )
+        ws6.add_table(tbl_hunt_fleet)
 
     # Table 2: Clinic Protection Breakdown
     ws6.cell(7, 15).value = "Clinic Protection & Coverage Summary"
@@ -1808,7 +1882,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     r_unm = r_hp + 3
     ws6.cell(r_unm, 1).value = f"Huntress Endpoints Not Managed in NinjaOne Workstation Fleet ({len(unmanaged_huntress)} Endpoints)"
     ws6.cell(r_unm, 1).font = font_section
-    ws6.cell(r_unm + 1, 1).value = "Domain Controllers, Production Servers & Standalone Systems Enrolled in Huntress EDR"
+    ws6.cell(r_unm + 1, 1).value = "Unenrolled Workstations & Standalone Systems Enrolled in Huntress EDR (Excludes Servers)"
     ws6.cell(r_unm + 1, 1).font = font_subtitle
 
     headers_unm = [
@@ -1865,6 +1939,18 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             if c_idx in [8, 10] and isinstance(val, (int, float)):
                 cell.number_format = '#,##0'
         r_row_u += 1
+
+    # Convert Table 3 into an official Excel Table
+    if r_row_u - 1 >= r_unm + 3:
+        tbl_hunt_unm = Table(displayName="Table_Huntress_UnmanagedEndpoints", ref=f"A{r_unm + 2}:L{r_row_u - 1}")
+        tbl_hunt_unm.tableStyleInfo = TableStyleInfo(
+            name="TableStyleLight8",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False
+        )
+        ws6.add_table(tbl_hunt_unm)
 
     ws6_widths = {
         1: 18, 2: 24, 3: 16, 4: 24, 5: 22, 6: 14, 7: 20, 8: 14, 9: 20, 10: 16,

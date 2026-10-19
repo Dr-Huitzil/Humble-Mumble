@@ -316,10 +316,15 @@ def _build_lifecycle_tab(wb, inventory_data, total_fleet, clinic_map, years=None
     chart_rf.width = 16
     chart_rf.height = 7
     chart_rf.legend = None
+
     chart_rf.dLbls = DataLabelList()
     chart_rf.dLbls.showVal = True
+    chart_rf.dLbls.showCatName = False
+    chart_rf.dLbls.showSerName = False
+    chart_rf.dLbls.showLegendKey = False
     chart_rf.x_axis.delete = False
     chart_rf.y_axis.delete = False
+
     rf_data = Reference(ws1, min_col=2, min_row=r1 + 3, max_row=rf_table_row - 1)
     rf_cats = Reference(ws1, min_col=1, min_row=r1 + 4, max_row=rf_table_row - 1)
     chart_rf.add_data(rf_data, titles_from_data=True)
@@ -524,10 +529,15 @@ def _build_patch_reboot_tab(wb, inventory_data, total_fleet):
     chart_boot.width = 15
     chart_boot.height = 7
     chart_boot.legend = None
+
     chart_boot.dLbls = DataLabelList()
     chart_boot.dLbls.showVal = True
+    chart_boot.dLbls.showCatName = False
+    chart_boot.dLbls.showSerName = False
+    chart_boot.dLbls.showLegendKey = False
     chart_boot.x_axis.delete = False
     chart_boot.y_axis.delete = False
+
     b_data = Reference(ws2, min_col=3, min_row=r_uptime_start + 1, max_row=r_tier - 1)
     b_cats = Reference(ws2, min_col=2, min_row=r_uptime_start + 2, max_row=r_tier - 1)
     chart_boot.add_data(b_data, titles_from_data=True)
@@ -665,7 +675,7 @@ def _build_performance_capacity_tab(wb, inventory_data, total_fleet):
     chart_ram.title = "RAM Hardware Profile"
     chart_ram.style = 10
     chart_ram.width = 10
-    chart_ram.height = 5
+    chart_ram.height = 4
     ram_data = Reference(ws3, min_col=9, min_row=8, max_row=r_ram - 1)
     ram_cats = Reference(ws3, min_col=7, min_row=9, max_row=r_ram - 1)
     chart_ram.add_data(ram_data, titles_from_data=True)

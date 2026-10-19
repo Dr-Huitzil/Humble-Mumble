@@ -1,0 +1,31 @@
+{
+  "organization_name": "Contoso Enterprise",
+  "domain_name": "CONTOSO.LOCAL",
+  "default_location_name": "Headquarters",
+  "hostname_prefixes": {
+    "HQ": "Headquarters",
+    "CORP": "Corporate Office",
+    "BR1": "Branch Office 1",
+    "BR2": "Branch Office 2",
+    "REM": "Remote Workforce",
+    "DC": "Datacenter Operations",
+    "SRV": "Servers / Infrastructure",
+    "IT": "IT Department",
+    "LAB": "R&D Lab"
+  },
+  "canonical_locations": {
+    "HEADQUARTERS": "Headquarters",
+    "HQ": "Headquarters",
+    "CORPORATE": "Corporate Office",
+    "BRANCH OFFICE 1": "Branch Office 1",
+    "BRANCH 1": "Branch Office 1",
+    "BRANCH OFFICE 2": "Branch Office 2",
+    "BRANCH 2": "Branch Office 2",
+    "REMOTE": "Remote Workforce",
+    "DATACENTER": "Datacenter Operations",
+    "SERVERS / INFRASTRUCTURE": "Servers / Infrastructure",
+    "DEFAULT CONTAINER (UNASSIGNED)": "Default Container (Unassigned)",
+    "DISABLED COMPUTERS": "Disabled Computers",
+    "UNASSIGNED": "Unassigned"
+  }
+}

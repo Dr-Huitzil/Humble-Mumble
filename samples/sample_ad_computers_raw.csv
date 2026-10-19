@@ -1,0 +1,14 @@
+Name,Status,Column1,Column2,Column3,OperatingSystem,OperatingSystemVersion,LastLogonDate,Last Logon - Days,CreatedDate,Created - Days,ModifiedDate,Modified- Days
+HQ-D-101,Enabled,OU=Workstations,OU=HQ,DC=contoso,Windows 11 Pro,10.0 (22631),2026-10-18 09:30:00,0,2022-01-20 10:00:00,1732,2026-10-18 09:30:00,0
+HQ-L-102,Enabled,OU=Laptops,OU=HQ,DC=contoso,Windows 11 Pro,10.0 (22631),2026-10-17 14:15:00,1,2023-03-15 11:30:00,1313,2026-10-17 14:15:00,1
+BR1-D-201,Enabled,OU=Workstations,OU=Branch 1,DC=contoso,Windows 10 Pro,10.0 (19045),2026-10-06 11:00:00,12,2021-07-01 08:45:00,1935,2026-10-06 11:00:00,12
+BR1-L-202,Enabled,OU=Laptops,OU=Branch 1,DC=contoso,Windows 11 Pro,10.0 (22621),2026-09-03 15:20:00,45,2022-10-05 13:10:00,1474,2026-09-03 15:20:00,45
+BR2-D-301,Enabled,OU=Workstations,OU=Branch 2,DC=contoso,Windows 11 Pro,10.0 (22631),2026-10-13 08:30:00,5,2023-05-12 09:15:00,1255,2026-10-13 08:30:00,5
+BR2-L-302,Enabled,OU=Laptops,OU=Branch 2,DC=contoso,Windows 10 Pro,10.0 (19045),2026-06-20 16:00:00,120,2022-04-18 14:20:00,1644,2026-06-20 16:00:00,120
+CORP-D-401,Enabled,OU=Workstations,OU=Corporate,DC=contoso,Windows 11 Pro,10.0 (22631),2026-10-16 10:45:00,2,2024-01-25 15:00:00,997,2026-10-16 10:45:00,2
+REM-L-501,Enabled,OU=Laptops,OU=Remote,DC=contoso,Windows 11 Pro,10.0 (22631),2026-09-30 09:10:00,18,2022-11-28 10:00:00,1420,2026-09-30 09:10:00,18
+SRV-DC-01,Enabled,OU=Domain Controllers,DC=contoso,DC=local,Windows Server 2022 Standard,10.0 (20348),2026-10-18 01:00:00,0,2021-08-20 02:30:00,1885,2026-10-18 01:00:00,0
+SRV-FS-01,Enabled,OU=Servers,DC=contoso,DC=local,Windows Server 2019 Standard,10.0 (17763),2026-10-18 02:00:00,0,2020-10-15 03:45:00,2194,2026-10-18 02:00:00,0
+GHOST-D-900,Enabled,OU=Workstations,OU=HQ,DC=contoso,Windows 10 Pro,10.0 (19044),2026-05-25 11:00:00,146,2021-03-10 10:00:00,2048,2026-05-25 11:00:00,146
+UNASSIGNED-01,Enabled,CN=Computers,DC=contoso,DC=local,Windows 11 Pro,10.0 (22631),2026-10-12 14:00:00,6,2026-09-01 09:00:00,47,2026-10-12 14:00:00,6
+DECOMM-L-001,Disabled,OU=Disabled Computers,DC=contoso,DC=local,Windows 10 Pro,10.0 (19042),2025-11-10 08:00:00,342,2019-05-15 11:00:00,2713,2026-01-10 15:00:00,281

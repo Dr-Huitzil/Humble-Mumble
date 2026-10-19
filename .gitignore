@@ -1,0 +1,53 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments & IDEs
+.venv/
+venv/
+ENV/
+.vscode/
+.idea/
+*.swp
+*.sublime-*
+
+# Windows & OS artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Temporary & Lock files
+~$*.xlsx
+*.tmp
+*.log
+
+# Sensitive Google OAuth Credentials & Tokens (Never commit real credentials)
+credentials.json
+token.json
+client_secret_*.json
+
+# Generated Excel Reports
+reports/**/*.xlsx
+reports/**/*.csv
+*.xlsx
+
+# Local Data Dumps (Protect proprietary fleet data)
+data/
+archive/
+Computers_Raw_*.csv
+*device_details*.csv
+*custom_fields*.csv
+*huntress*.csv
+*.csv
+
+# Whitelist synthetic mock samples & folder markers
+!samples/*.csv
+!reports/**/.gitkeep
+
+# Local organization overrides
+organization_config.local.json
+.env
+.env.local

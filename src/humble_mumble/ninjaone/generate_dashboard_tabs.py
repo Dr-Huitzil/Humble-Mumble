@@ -19,6 +19,7 @@ from collections import Counter, defaultdict
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, DoughnutChart, Reference
+from openpyxl.chart.label import DataLabelList
 
 from humble_mumble.core import config
 from humble_mumble.core.utils import draw_kpi_cards, is_valid_serial, normalize_hostname, safe_float, safe_int
@@ -315,6 +316,10 @@ def _build_lifecycle_tab(wb, inventory_data, total_fleet, clinic_map, years=None
     chart_rf.width = 16
     chart_rf.height = 7
     chart_rf.legend = None
+    chart_rf.dLbls = DataLabelList()
+    chart_rf.dLbls.showVal = True
+    chart_rf.x_axis.delete = False
+    chart_rf.y_axis.delete = False
     rf_data = Reference(ws1, min_col=2, min_row=r1 + 3, max_row=rf_table_row - 1)
     rf_cats = Reference(ws1, min_col=1, min_row=r1 + 4, max_row=rf_table_row - 1)
     chart_rf.add_data(rf_data, titles_from_data=True)
@@ -433,7 +438,7 @@ def _build_patch_reboot_tab(wb, inventory_data, total_fleet):
     os_cats = Reference(ws2, min_col=1, min_row=9, max_row=r_os - 1)
     chart_os.add_data(os_data, titles_from_data=True)
     chart_os.set_categories(os_cats)
-    ws2.add_chart(chart_os, "F7")
+    ws2.add_chart(chart_os, "G7")
 
     # Table 2: Reboot Hygiene / Uptime Tiers
     r_uptime_start = r_os + 2
@@ -519,14 +524,18 @@ def _build_patch_reboot_tab(wb, inventory_data, total_fleet):
     chart_boot.width = 15
     chart_boot.height = 7
     chart_boot.legend = None
+    chart_boot.dLbls = DataLabelList()
+    chart_boot.dLbls.showVal = True
+    chart_boot.x_axis.delete = False
+    chart_boot.y_axis.delete = False
     b_data = Reference(ws2, min_col=3, min_row=r_uptime_start + 1, max_row=r_tier - 1)
     b_cats = Reference(ws2, min_col=2, min_row=r_uptime_start + 2, max_row=r_tier - 1)
     chart_boot.add_data(b_data, titles_from_data=True)
     chart_boot.set_categories(b_cats)
-    ws2.add_chart(chart_boot, f"G{r_uptime_start}")
+    ws2.add_chart(chart_boot, f"G{r_uptime_start + 19}")
 
     # Auto column widths
-    ws2_widths = {1: 24, 2: 18, 3: 15, 4: 15, 5: 38, 6: 4, 7: 18, 8: 15, 9: 15}
+    ws2_widths = {1: 24, 2: 18, 3: 15, 4: 33, 5: 39, 6: 4, 7: 18, 8: 15, 9: 15}
     for c_idx, w in ws2_widths.items():
         ws2.column_dimensions[get_column_letter(c_idx)].width = w
 
@@ -655,8 +664,8 @@ def _build_performance_capacity_tab(wb, inventory_data, total_fleet):
     chart_ram = DoughnutChart()
     chart_ram.title = "RAM Hardware Profile"
     chart_ram.style = 10
-    chart_ram.width = 13
-    chart_ram.height = 6.5
+    chart_ram.width = 8
+    chart_ram.height = 3
     ram_data = Reference(ws3, min_col=9, min_row=8, max_row=r_ram - 1)
     ram_cats = Reference(ws3, min_col=7, min_row=9, max_row=r_ram - 1)
     chart_ram.add_data(ram_data, titles_from_data=True)
@@ -712,7 +721,7 @@ def _build_performance_capacity_tab(wb, inventory_data, total_fleet):
         curr_r += 1
 
     # Auto column widths
-    ws3_widths = {1: 18, 2: 24, 3: 16, 4: 24, 5: 22, 6: 14, 7: 13, 8: 13, 9: 12, 10: 14}
+    ws3_widths = {1: 18, 2: 24, 3: 16, 4: 24, 5: 31, 6: 14, 7: 21, 8: 21, 9: 12, 10: 14}
     for c_idx, w in ws3_widths.items():
         ws3.column_dimensions[get_column_letter(c_idx)].width = w
 
@@ -1388,7 +1397,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
 
     ws_widths = {
         1: 18, 2: 24, 3: 16, 4: 20, 5: 14, 6: 18, 7: 14, 8: 24, 9: 20, 10: 16,
-        11: 24, 12: 42, 13: 36, 14: 3, 15: 28, 16: 12, 17: 12, 18: 14, 19: 14, 20: 14
+        11: 24, 12: 66, 13: 57, 14: 3, 15: 28, 16: 12, 17: 12, 18: 14, 19: 14, 20: 14
     }
     for c_idx, w in ws_widths.items():
         ws_ad_ref.column_dimensions[get_column_letter(c_idx)].width = w
@@ -1507,12 +1516,12 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
                 category = "MISSING_ONLINE"
                 priority = 1
                 if up_days <= 7:
-                    diag_reason = "Device is ONLINE active but NEVER ADDED to Huntress endpoint protection"
+                    diag_reason = "Device is in NinjaOne but NEVER ADDED to Huntress endpoint protection"
                 elif up_days <= 30:
                     diag_reason = f"Active device ({up_days}d uptime) with NO Huntress endpoint protection"
                 else:
                     diag_reason = f"Active device ({up_days}d uptime <=90d) missing Huntress agent"
-                rec_action = "Deploy Huntress Agent immediately via NinjaOne policy"
+                rec_action = "Deploy Huntress Agent immediately via NinjaOne automation"
                 fill_st = fill_red
                 font_st = font_red
             else:
@@ -1849,7 +1858,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
 
     ws6_widths = {
         1: 18, 2: 24, 3: 16, 4: 24, 5: 22, 6: 14, 7: 20, 8: 14, 9: 20, 10: 16,
-        11: 26, 12: 42, 13: 36, 14: 3, 15: 28, 16: 12, 17: 12, 18: 16, 19: 16, 20: 14
+        11: 26, 12: 61, 13: 48, 14: 3, 15: 28, 16: 12, 17: 12, 18: 16, 19: 16, 20: 14
     }
     for c_idx, w in ws6_widths.items():
         ws6.column_dimensions[get_column_letter(c_idx)].width = w

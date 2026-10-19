@@ -280,8 +280,8 @@ def build_huntress_dashboard_tab(wb, agents, title="Executive Summary"):
     # Add OS Doughnut Chart
     chart_os = DoughnutChart()
     chart_os.title = "Fleet OS Distribution"
-    chart_os.width = 13
-    chart_os.height = 7
+    chart_os.width = 10
+    chart_os.height = 4
     data_ref = Reference(ws_sum, min_col=8, min_row=9, max_row=r_os - 1)
     cats_ref = Reference(ws_sum, min_col=7, min_row=10, max_row=r_os - 1)
     chart_os.add_data(data_ref, titles_from_data=True)

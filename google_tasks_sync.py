@@ -226,7 +226,7 @@ def sync_flagged_csv_to_google_tasks(
                 existing_lists[clinic_name] = list_id
                 existing_lists_lower[clinic_name.lower()] = list_id
                 stats["lists_created"] += 1
-                log(f"[✓] Created new Google Task List: '{clinic_name}'")
+                log(f"[OK] Created new Google Task List: '{clinic_name}'")
         else:
             stats["lists_reused"] += 1
             log(f"[*] Reusing existing Google Task List: '{clinic_name}'")
@@ -337,7 +337,7 @@ def sync_flagged_csv_to_google_tasks(
                         existing_parent["status"] = "needsAction"
                         # Append audit note
                         orig_notes = existing_parent.get("notes", "")
-                        reopen_stamp = f"\n[⚠️ Re-opened on {datetime.now().strftime('%m/%d/%Y %H:%M')}: Unresolved audit issues remain]\n"
+                        reopen_stamp = f"\n[Re-opened on {datetime.now().strftime('%m/%d/%Y %H:%M')}: Unresolved audit issues remain]\n"
                         existing_parent["notes"] = reopen_stamp + orig_notes
                         req = service.tasks().update(tasklist=list_id, task=parent_id, body=existing_parent)
                         execute_with_retry(req, log_callback=log)

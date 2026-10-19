@@ -130,21 +130,21 @@ class GoogleTasksSyncApp:
 
         self.btn_signin = ttk.Button(
             row_auth,
-            text="🔑 Sign In to Google",
+            text="Sign In to Google",
             command=self.start_google_signin
         )
         self.btn_signin.pack(side="left", padx=(0, 8))
 
         self.btn_browse_creds = ttk.Button(
             row_auth,
-            text="📂 Select credentials.json",
+            text="Select credentials.json",
             command=self.browse_credentials
         )
         self.btn_browse_creds.pack(side="left", padx=(0, 8))
 
         btn_guide = ttk.Button(
             row_auth,
-            text="ℹ️ Setup Instructions",
+            text="Setup Instructions",
             command=self.show_oauth_guide
         )
         btn_guide.pack(side="left")
@@ -174,7 +174,7 @@ class GoogleTasksSyncApp:
         btn_browse_csv = ttk.Button(row_csv, text="Browse...", command=self.browse_csv)
         btn_browse_csv.pack(side="left", padx=(0, 6))
 
-        btn_auto_csv = ttk.Button(row_csv, text="⚡ Auto-Detect Latest", command=self.auto_detect_csv)
+        btn_auto_csv = ttk.Button(row_csv, text="Auto-Detect Latest", command=self.auto_detect_csv)
         btn_auto_csv.pack(side="left")
 
         self.lbl_csv_meta = tk.Label(card_csv, text="", font=("Segoe UI", 9, "italic"), fg=self.c_gray, bg=self.c_card)
@@ -246,21 +246,21 @@ class GoogleTasksSyncApp:
 
         self.btn_dry_run = ttk.Button(
             bottom_frame,
-            text="🔍 Test Run / Preview",
+            text="Test Run / Preview",
             command=lambda: self.start_sync_thread(is_dry_run=True)
         )
         self.btn_dry_run.pack(side="left", padx=(0, 10))
 
         self.btn_push = ttk.Button(
             bottom_frame,
-            text="🚀 Push to Google Tasks",
+            text="Push to Google Tasks",
             command=lambda: self.start_sync_thread(is_dry_run=False)
         )
         self.btn_push.pack(side="left", padx=(0, 10))
 
         btn_open_web = ttk.Button(
             bottom_frame,
-            text="🌐 Open Google Tasks in Browser",
+            text="Open Google Tasks in Browser",
             command=lambda: webbrowser.open("https://tasks.google.com")
         )
         btn_open_web.pack(side="right")
@@ -278,17 +278,17 @@ class GoogleTasksSyncApp:
     def refresh_auth_status(self):
         st = get_auth_status()
         if st["is_valid"]:
-            self.auth_badge_text.set("✓ Authenticated with Google Tasks")
+            self.auth_badge_text.set("[OK] Authenticated with Google Tasks")
             self.lbl_auth_status.config(bg=self.c_green)
-            self.btn_signin.config(text="✓ Re-Authenticate / Switch Account")
+            self.btn_signin.config(text="Re-Authenticate / Switch Account")
         elif st["has_credentials"]:
-            self.auth_badge_text.set("⚠️ Ready to Sign In (credentials.json detected)")
+            self.auth_badge_text.set("[Ready] Ready to Sign In (credentials.json detected)")
             self.lbl_auth_status.config(bg=self.c_warn)
-            self.btn_signin.config(text="🔑 Sign In to Google")
+            self.btn_signin.config(text="Sign In to Google")
         else:
-            self.auth_badge_text.set("⚠️ Missing credentials.json")
+            self.auth_badge_text.set("[Missing] Missing credentials.json")
             self.lbl_auth_status.config(bg=self.c_red)
-            self.btn_signin.config(text="🔑 Sign In to Google")
+            self.btn_signin.config(text="Sign In to Google")
 
     def browse_credentials(self):
         path = filedialog.askopenfilename(
@@ -301,7 +301,7 @@ class GoogleTasksSyncApp:
                 import shutil
                 if os.path.abspath(path) != dest:
                     shutil.copyfile(path, dest)
-                self.log(f"[✓] Copied credentials to: {dest}")
+                self.log(f"[OK] Copied credentials to: {dest}")
                 self.refresh_auth_status()
                 messagebox.showinfo("Success", "credentials.json successfully configured!\n\nClick 'Sign In to Google' to authenticate.")
             except Exception as e:
@@ -334,7 +334,7 @@ class GoogleTasksSyncApp:
             try:
                 self.log("Opening official Google Sign-In page in default web browser...")
                 self.service = authenticate_google_tasks()
-                self.log("[✓] Google Authentication Successful! Token saved.")
+                self.log("[OK] Google Authentication Successful! Token saved.")
                 self.root.after(0, self.on_signin_success)
             except Exception as e:
                 self.log(f"[!] Authentication error: {str(e)}")
@@ -358,7 +358,7 @@ class GoogleTasksSyncApp:
                 latest_csv = files[0]
                 self.csv_path.set(latest_csv)
                 self.inspect_csv(latest_csv)
-                self.log(f"[✓] Auto-detected latest flagged devices export: {os.path.basename(latest_csv)}")
+                self.log(f"[OK] Auto-detected latest flagged devices export: {os.path.basename(latest_csv)}")
                 return
         self.lbl_csv_meta.config(text="No flagged devices CSV found in reports/Tasks/. Run Extensive Report first.")
 

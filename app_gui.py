@@ -267,7 +267,7 @@ class ReportingStudioApp:
         btn_ad_frame.grid(row=10, column=1, pady=(0, 2), sticky="w")
         self.btn_gen_ad_csv = tk.Button(
             btn_ad_frame,
-            text="⚡ Generate CSV",
+            text="Generate CSV",
             font=("Segoe UI", 8, "bold"),
             bg="#D9E2EC",
             fg=self.c_navy,
@@ -287,7 +287,7 @@ class ReportingStudioApp:
         # Row 5: Auto-detect Button inside Card 1
         self.btn_detect = ttk.Button(
             card1,
-            text="🔍 Auto-Detect All Recent Exports (< 7 Days)",
+            text="Auto-Detect All Recent Exports (< 7 Days)",
             command=lambda: self.auto_detect_files(notify=True)
         )
         self.btn_detect.grid(row=12, column=0, columnspan=2, sticky="w", pady=(4, 2))
@@ -321,7 +321,7 @@ class ReportingStudioApp:
 
         self.btn_run = tk.Button(
             action_frame,
-            text="🚀  Generate Selected Report",
+            text="Generate Selected Report",
             font=("Segoe UI", 11, "bold"),
             bg=self.c_navy,
             fg="#FFFFFF",
@@ -368,7 +368,7 @@ class ReportingStudioApp:
 
         self.btn_open_excel = ttk.Button(
             bottom_frame,
-            text="📊 Open Generated Excel Report",
+            text="Open Generated Excel Report",
             state="disabled",
             command=self.open_excel_file
         )
@@ -376,21 +376,21 @@ class ReportingStudioApp:
 
         self.btn_open_tasks = ttk.Button(
             bottom_frame,
-            text="📋 View Tasks CSV",
+            text="View Tasks CSV",
             command=self.open_tasks_folder
         )
         self.btn_open_tasks.pack(side="left", padx=(0, 10))
 
         self.btn_sync_google = ttk.Button(
             bottom_frame,
-            text="🔄 Sync to Google Tasks",
+            text="Sync to Google Tasks",
             command=self.open_google_tasks_sync_gui
         )
         self.btn_sync_google.pack(side="left", padx=(0, 10))
 
         self.btn_open_folder = ttk.Button(
             bottom_frame,
-            text="📁 Open Folder Location",
+            text="Open Folder Location",
             command=self.open_output_folder
         )
         self.btn_open_folder.pack(side="left")
@@ -418,17 +418,17 @@ class ReportingStudioApp:
 
         # Update Run Button Text
         if m_id == "extensive":
-            self.btn_run.config(text="🚀  Generate Extensive Report (Ninja + AD + Huntress)")
+            self.btn_run.config(text="Generate Extensive Report (Ninja + AD + Huntress)")
         elif m_id == "ninja_ad":
-            self.btn_run.config(text="🚀  Generate Ninja & AD Inventory Report")
+            self.btn_run.config(text="Generate Ninja & AD Inventory Report")
         elif m_id == "ninja_huntress":
-            self.btn_run.config(text="🚀  Generate Ninja & Huntress Report (No AD Lifecycle)")
+            self.btn_run.config(text="Generate Ninja & Huntress Report (No AD Lifecycle)")
         elif m_id == "ninja_only":
-            self.btn_run.config(text="🚀  Generate Ninja Inventory Report (No AD Lifecycle)")
+            self.btn_run.config(text="Generate Ninja Inventory Report (No AD Lifecycle)")
         elif m_id == "ad_only":
-            self.btn_run.config(text="🚀  Generate Active Directory Excel Report")
+            self.btn_run.config(text="Generate Active Directory Excel Report")
         elif m_id == "huntress_only":
-            self.btn_run.config(text="🚀  Generate Standalone Huntress Report")
+            self.btn_run.config(text="Generate Standalone Huntress Report")
 
         # Enable/Disable Rows based on selected mode
         self.update_widget_states_for_mode(m_id)
@@ -505,14 +505,14 @@ class ReportingStudioApp:
                 mtime = os.path.getmtime(path)
                 age_days = round((time.time() - mtime) / 86400.0, 1)
                 if age_days > 7.0:
-                    return "warn", f"⚠️ Verified ({age_days}d old): {os.path.basename(path)}"
+                    return "warn", f"[Warning] Verified ({age_days}d old): {os.path.basename(path)}"
             except Exception:
                 pass
-            return True, f"✅ Verified: {os.path.basename(path)}"
+            return True, f"[Verified] {os.path.basename(path)}"
         elif ctype == "VISIBLE_COLUMNS_REDUNDANT":
-            return False, "⚠️ Warning: Contains only visible columns (Redundant)"
+            return False, "[Warning] Contains only visible columns (Redundant)"
         else:
-            return False, f"⚠️ Detected as '{ctype}', expected '{expected_type}'"
+            return False, f"[Warning] Detected as '{ctype}', expected '{expected_type}'"
 
     def update_badges(self):
         m_id = self.get_current_mode()["id"]
@@ -544,7 +544,7 @@ class ReportingStudioApp:
         # AD Raw
         if m_id in ["extensive", "ninja_ad", "ad_only"]:
             if not self.ad_path.get().strip():
-                self.ad_status.set("Click '⚡ Generate CSV' or Browse an existing Computers_Raw export")
+                self.ad_status.set("Click 'Generate CSV' or Browse an existing Computers_Raw export")
                 self.badge_ad.config(fg=self.c_warn)
             else:
                 va, msga = self.validate_file(self.ad_path.get(), "AD_COMPUTERS_RAW")
@@ -610,7 +610,7 @@ class ReportingStudioApp:
         elif res.get("stale_details"):
             st_f, st_d = res["stale_details"]
             self.details_path.set(os.path.abspath(st_f))
-            self.log(f"⚠️ Auto-selected older Device Details CSV: {os.path.basename(st_f)} ({st_d}d old)")
+            self.log(f"[Auto-selected] older Device Details CSV: {os.path.basename(st_f)} ({st_d}d old)")
             stale_auto_filled.append(f"• Device Details: {os.path.basename(st_f)} ({st_d}d old)")
 
         # Custom Fields
@@ -621,7 +621,7 @@ class ReportingStudioApp:
         elif res.get("stale_custom"):
             st_f, st_d = res["stale_custom"]
             self.custom_path.set(os.path.abspath(st_f))
-            self.log(f"⚠️ Auto-selected older Custom Fields CSV: {os.path.basename(st_f)} ({st_d}d old)")
+            self.log(f"[Auto-selected] older Custom Fields CSV: {os.path.basename(st_f)} ({st_d}d old)")
             stale_auto_filled.append(f"• Custom Fields: {os.path.basename(st_f)} ({st_d}d old)")
 
         # Huntress Agents
@@ -632,7 +632,7 @@ class ReportingStudioApp:
         elif res.get("stale_huntress"):
             st_f, st_d = res["stale_huntress"]
             self.huntress_path.set(os.path.abspath(st_f))
-            self.log(f"⚠️ Auto-selected older Huntress CSV: {os.path.basename(st_f)} ({st_d}d old)")
+            self.log(f"[Auto-selected] older Huntress CSV: {os.path.basename(st_f)} ({st_d}d old)")
             stale_auto_filled.append(f"• Huntress Agents: {os.path.basename(st_f)} ({st_d}d old)")
 
         # AD Raw Export
@@ -643,7 +643,7 @@ class ReportingStudioApp:
         elif stale_ad:
             st_f, st_d = stale_ad
             self.ad_path.set(os.path.abspath(st_f))
-            self.log(f"⚠️ Auto-selected older AD Raw CSV: {os.path.basename(st_f)} ({st_d}d old)")
+            self.log(f"[Auto-selected] older AD Raw CSV: {os.path.basename(st_f)} ({st_d}d old)")
             stale_auto_filled.append(f"• AD Raw Export: {os.path.basename(st_f)} ({st_d}d old)")
 
         if res.get("redundant_found"):
@@ -666,7 +666,7 @@ class ReportingStudioApp:
             if msg_items:
                 stale_note = ""
                 if stale_auto_filled:
-                    stale_note = "\n\n⚠️ Also auto-filled existing older exports (> 7 days):\n" + "\n".join(stale_auto_filled)
+                    stale_note = "\n\nAlso auto-filled existing older exports (> 7 days):\n" + "\n".join(stale_auto_filled)
                 messagebox.showinfo("Smart Detection", "Auto-detected recent exports (< 7 days):\n\n" + "\n".join(msg_items) + stale_note)
             elif stale_auto_filled:
                 messagebox.showwarning("Smart Detection", "No fresh exports (< 7 days) found. Auto-loaded existing older files:\n\n" + "\n".join(stale_auto_filled))
@@ -686,7 +686,7 @@ class ReportingStudioApp:
             return
 
         self.is_running_ad_export = True
-        self.btn_gen_ad_csv.config(state="disabled", text="⏳ Exporting...")
+        self.btn_gen_ad_csv.config(state="disabled", text="Exporting...")
         self.btn_run.config(state="disabled")
         self.progress_bar.start(10)
 
@@ -733,7 +733,7 @@ class ReportingStudioApp:
     def on_ad_export_success(self):
         self.is_running_ad_export = False
         self.progress_bar.stop()
-        self.btn_gen_ad_csv.config(state="normal", text="⚡ Generate CSV")
+        self.btn_gen_ad_csv.config(state="normal", text="Generate CSV")
         self.btn_run.config(state="normal")
 
         # Detect the newly created file
@@ -750,7 +750,7 @@ class ReportingStudioApp:
     def on_ad_export_failed(self, err_msg):
         self.is_running_ad_export = False
         self.progress_bar.stop()
-        self.btn_gen_ad_csv.config(state="normal", text="⚡ Generate CSV")
+        self.btn_gen_ad_csv.config(state="normal", text="Generate CSV")
         self.btn_run.config(state="normal")
         self.update_badges()
         messagebox.showerror("PowerShell Error", f"Failed to execute Active Directory export:\n\n{err_msg}\n\nEnsure this machine is domain-joined or connected via VPN with ActiveDirectory module installed.")
@@ -786,7 +786,7 @@ class ReportingStudioApp:
 
         if m_id in ["extensive", "ninja_ad", "ad_only"]:
             if not ad or not os.path.exists(ad):
-                messagebox.showerror("Missing File", "No Active Directory raw CSV selected.\n\nPlease click '⚡ Generate CSV' to export directly from AD, or browse an existing Computers_Raw_*.csv file.")
+                messagebox.showerror("Missing File", "No Active Directory raw CSV selected.\n\nPlease click 'Generate CSV' to export directly from AD, or browse an existing Computers_Raw_*.csv file.")
                 return
 
         # Ensure destination folder exists
@@ -853,7 +853,7 @@ class ReportingStudioApp:
                     today_str = datetime.now().strftime("%m%d%Y")
                     tasks_csv = os.path.join("reports", "Tasks", f"flaggedDevices_{today_str}.csv")
                     if os.path.exists(tasks_csv):
-                        self.log(f"📋 Google Tasks CSV created: {tasks_csv}")
+                        self.log(f"Google Tasks CSV created: {tasks_csv}")
 
             elif m_id == "ad_only":
                 self.log(f"Processing Active Directory raw export: {os.path.basename(ad)}...")

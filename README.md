@@ -5,7 +5,7 @@
 
 ---
 
-## 🌟 Overview
+## Overview
 
 **Humble Mumble** is a modular enterprise IT automation platform that eliminates the operational disconnect between RMM agents, EDR sensors, Active Directory computer objects, and day-to-day task remediation.
 
@@ -13,7 +13,7 @@ Instead of exporting separate spreadsheets that quickly fall out of sync, Humble
 
 ---
 
-## ⚡ Key Capabilities
+## Key Capabilities
 
 - **Unified Executive Workbooks**: Generates 7 to 12 structured worksheets with executive KPI cards, auto-filters, storage/reboot alert formatting, and distribution charts.
 - **Cross-Source Reconciliation Engine**:
@@ -32,7 +32,7 @@ Instead of exporting separate spreadsheets that quickly fall out of sync, Humble
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Prerequisites & Installation
 Ensure Python 3.10+ is installed on Windows, macOS, or Linux:
@@ -53,7 +53,7 @@ python app_gui.py
 
 ---
 
-## ⚙️ Customization for Any Organization or MSP
+## Customization for Any Organization or MSP
 
 Humble Mumble is designed to be completely organization-agnostic. You do not need to modify Python code to adapt it to your company or clients.
 
@@ -102,7 +102,7 @@ Configure your company domain, naming conventions, and hostname prefix routing:
 
 ---
 
-## 📊 Report Modes & Tab Composition
+## Report Modes & Tab Composition
 
 | Report Mode | Target Audience | Tab Count | Included Sources |
 | :--- | :--- | :-: | :--- |
@@ -129,7 +129,7 @@ Configure your company domain, naming conventions, and hostname prefix routing:
 
 ---
 
-## 🔄 Google Tasks Synchronization Setup
+## Google Tasks Synchronization Setup
 
 Humble Mumble can automatically sync actionable endpoint remediation tasks directly to **Google Tasks**.
 
@@ -162,12 +162,12 @@ Launch the Google Tasks Studio:
 python google_tasks_gui.py
 ```
 1. Click **Sign In to Google** to authorize through your web browser. A local token (`token.json`) is securely cached and protected by `.gitignore`.
-2. Click **🔍 Test Run / Preview** to simulate task creation without modifying Google Tasks.
-3. Click **🚀 Push to Google Tasks** to sync live.
+2. Click **Test Run / Preview** to simulate task creation without modifying Google Tasks.
+3. Click **Push to Google Tasks** to sync live.
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 Humble Mumble/
@@ -210,7 +210,7 @@ Humble Mumble/
 
 ---
 
-## 🔒 Security & Data Hygiene
+## Security & Data Hygiene
 
 - **No Proprietary Data**: The repository includes zero customer data, zero proprietary credentials, and zero internal corporate network identifiers.
 - **Robust `.gitignore`**: All raw client exports (`*.csv`), completed client reports (`*.xlsx`), credentials (`credentials.json`), and OAuth tokens (`token.json`) are strictly excluded from version control.
@@ -219,6 +219,6 @@ Humble Mumble/
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).

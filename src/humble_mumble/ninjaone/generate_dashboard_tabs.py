@@ -532,7 +532,7 @@ def _build_patch_reboot_tab(wb, inventory_data, total_fleet):
     b_cats = Reference(ws2, min_col=2, min_row=r_uptime_start + 2, max_row=r_tier - 1)
     chart_boot.add_data(b_data, titles_from_data=True)
     chart_boot.set_categories(b_cats)
-    ws2.add_chart(chart_boot, f"G{r_uptime_start + 19}")
+    ws2.add_chart(chart_boot, "G19")
 
     # Auto column widths
     ws2_widths = {1: 24, 2: 18, 3: 15, 4: 33, 5: 39, 6: 4, 7: 18, 8: 15, 9: 15}
@@ -664,8 +664,8 @@ def _build_performance_capacity_tab(wb, inventory_data, total_fleet):
     chart_ram = DoughnutChart()
     chart_ram.title = "RAM Hardware Profile"
     chart_ram.style = 10
-    chart_ram.width = 8
-    chart_ram.height = 3
+    chart_ram.width = 10
+    chart_ram.height = 5
     ram_data = Reference(ws3, min_col=9, min_row=8, max_row=r_ram - 1)
     ram_cats = Reference(ws3, min_col=7, min_row=9, max_row=r_ram - 1)
     chart_ram.add_data(ram_data, titles_from_data=True)

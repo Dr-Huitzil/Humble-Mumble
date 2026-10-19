@@ -71,6 +71,7 @@ def parse_flagged_devices_from_workbook(wb, ref_date=None):
 
     # 1. Parse Ninja Devices
     ninja_devs = {}
+    ninja_by_serial = {}
     if ws_ninja:
         for r in range(2, ws_ninja.max_row + 1):
             dev = ws_ninja.cell(r, ninja_headers.get("Device", 1)).value
@@ -83,17 +84,21 @@ def parse_flagged_devices_from_workbook(wb, ref_date=None):
             except (ValueError, TypeError):
                 up_days = None
 
-            ninja_devs[dev_str.upper()] = {
+            sn_val = str(ws_ninja.cell(r, ninja_headers.get("Serial Number", 5)).value or "N/A").strip()
+            dev_entry = {
                 "name": dev_str,
                 "location": config.canonicalize_clinic_name(ws_ninja.cell(r, ninja_headers.get("Location", 2)).value),
                 "role": str(ws_ninja.cell(r, ninja_headers.get("Device Role", 3)).value or "").strip(),
                 "model": str(ws_ninja.cell(r, ninja_headers.get("Device Model", 4)).value or "Unknown").strip(),
-                "serial": str(ws_ninja.cell(r, ninja_headers.get("Serial Number", 5)).value or "N/A").strip(),
+                "serial": sn_val,
                 "user": str(ws_ninja.cell(r, ninja_headers.get("Last Login", 6)).value or "N/A").strip(),
                 "last_uptime": str(ws_ninja.cell(r, ninja_headers.get("Last Uptime_formatted", 7)).value or "").strip(),
                 "uptime_days": up_days,
                 "os": str(ws_ninja.cell(r, ninja_headers.get("OS", 12)).value or "").strip()
             }
+            ninja_devs[dev_str.upper()] = dev_entry
+            if is_valid_serial(sn_val):
+                ninja_by_serial[sn_val.upper()] = dev_entry
 
     # 2. Parse AD Devices
     ad_devs = {}
@@ -177,15 +182,42 @@ def parse_flagged_devices_from_workbook(wb, ref_date=None):
     ad_by_norm = {normalize_hostname(k): v for k, v in ad_devs.items()}
     ninja_by_norm = {normalize_hostname(k): v for k, v in ninja_devs.items()}
 
+    processed_serials = set()
+
     for key in fleet_keys:
         norm_k = normalize_hostname(key)
         n_item = ninja_devs.get(key) or ninja_by_norm.get(norm_k)
+        h_item = hunt_devs.get(key) or hunt_by_norm.get(norm_k)
         a_item = ad_devs.get(key) or ad_by_norm.get(norm_k)
         
-        # Huntress matching by exact name, normalized hostname, or valid serial fallback
-        h_item = hunt_devs.get(key) or hunt_by_norm.get(norm_k)
-        if not h_item and n_item and is_valid_serial(n_item.get("serial")):
-            h_item = hunt_by_serial.get(n_item["serial"].upper())
+        # Cross-reference Ninja & Huntress by Serial Number primarily
+        n_sn = n_item.get("serial", "").upper() if n_item and is_valid_serial(n_item.get("serial")) else ""
+        h_sn = h_item.get("serial", "").upper() if h_item and is_valid_serial(h_item.get("serial")) else ""
+
+        # Avoid processing the same physical hardware multiple times under different hostnames
+        if n_sn and n_sn in processed_serials:
+            continue
+        if h_sn and h_sn in processed_serials:
+            continue
+
+        if n_sn:
+            processed_serials.add(n_sn)
+            h_match = hunt_by_serial.get(n_sn)
+            if h_match:
+                h_item = h_match
+            elif h_item and is_valid_serial(h_item.get("serial")) and h_item.get("serial").upper() != n_sn:
+                # Disconnect candidate hostname match if it belongs to a different valid serial
+                h_item = None
+        elif h_sn:
+            processed_serials.add(h_sn)
+            n_match = ninja_by_serial.get(h_sn)
+            if n_match:
+                n_item = n_match
+            elif n_item and is_valid_serial(n_item.get("serial")) and n_item.get("serial").upper() != h_sn:
+                n_item = None
+
+        if n_item and not a_item:
+            a_item = ad_devs.get(n_item["name"].upper()) or ad_by_norm.get(normalize_hostname(n_item["name"]))
 
         # Resolve primary display name & clinic
         dev_name = (n_item["name"] if n_item else None) or (a_item["name"] if a_item else None) or (h_item["agent"] if h_item else key)

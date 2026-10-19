@@ -1444,7 +1444,18 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         model = d.get("Model") or "Unknown"
         user = d.get("User") or "N/A"
 
-        match_h = h_by_name.get(dev_name.upper()) or h_by_norm.get(normalize_hostname(dev_name)) or (h_by_sn.get(dev_sn.upper()) if is_valid_serial(dev_sn) else None)
+        # Prioritize Serial Number matching when valid; fall back to Hostname for VMs/generic serials
+        match_h = None
+        if is_valid_serial(dev_sn) and dev_sn.upper() in h_by_sn:
+            match_h = h_by_sn[dev_sn.upper()]
+        else:
+            # Fall back to hostname if serial number is missing/invalid,
+            # or if candidate Huntress agent does NOT have a conflicting valid serial
+            candidate = h_by_name.get(dev_name.upper()) or h_by_norm.get(normalize_hostname(dev_name))
+            if candidate:
+                cand_sn = str(candidate.get("Serial") or "").strip().upper()
+                if not is_valid_serial(dev_sn) or not is_valid_serial(cand_sn):
+                    match_h = candidate
 
         if match_h:
             h_agent = match_h["Agent"]
@@ -1537,7 +1548,13 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         ag_u = a["Agent"].upper()
         ag_norm = normalize_hostname(a["Agent"])
         sn_u = a["Serial"].upper() if is_valid_serial(a.get("Serial")) else ""
-        if ag_u not in ninja_names and ag_norm not in ninja_norms and (not sn_u or sn_u not in ninja_sns):
+        # Prioritize Serial Number check; fall back to Hostname if no valid serial exists
+        if sn_u:
+            is_managed = sn_u in ninja_sns
+        else:
+            is_managed = (ag_u in ninja_names) or (ag_norm in ninja_norms)
+
+        if not is_managed:
             os_name = a["OS"]
             if "Server" in os_name:
                 role_ident = "Windows Server - Infrastructure (Not in Workstation Inventory)"

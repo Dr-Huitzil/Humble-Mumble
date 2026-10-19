@@ -168,24 +168,24 @@ INVENTORY_COL_WIDTHS = {
 # -----------------------------------------------------------------------------
 HUNTRESS_HEADERS = [
     "Agent", "Organization", "Operating System", "Agent Version", "EDR Version",
-    "MacOS EDR enabled", "Internal IP", "External IP", "Registered", "Last Seen",
-    "Serial Number", "AD Domain", "Ninja Status", "Days Inactive"
+    "MacOS EDR enabled", "Internal IP", "Registered", "Register - Days", "Last Seen",
+    "Last Seen - Days", "Serial Number"
 ]
 
 HUNTRESS_COL_WIDTHS = {
-    1: 18, 2: 14, 3: 28, 4: 16, 5: 14, 6: 18, 7: 18, 8: 18, 9: 22, 10: 22,
-    11: 24, 12: 16, 13: 20, 14: 16
+    1: 18, 2: 18, 3: 28, 4: 16, 5: 14, 6: 18, 7: 18, 8: 20, 9: 16, 10: 20,
+    11: 16, 12: 24
 }
 
 HUNTRESS_STANDALONE_HEADERS = [
     "Agent", "Organization", "Operating System", "Agent Version", "EDR Version",
-    "MacOS EDR enabled", "Internal IP", "External IP", "Registered", "Last Seen",
-    "Serial Number", "AD Domain", "Days Inactive"
+    "MacOS EDR enabled", "Internal IP", "Registered", "Register - Days", "Last Seen",
+    "Last Seen - Days", "Serial Number"
 ]
 
 HUNTRESS_STANDALONE_COL_WIDTHS = {
-    1: 18, 2: 18, 3: 28, 4: 16, 5: 14, 6: 18, 7: 18, 8: 18, 9: 22, 10: 22,
-    11: 24, 12: 18, 13: 16
+    1: 18, 2: 18, 3: 28, 4: 16, 5: 14, 6: 18, 7: 18, 8: 20, 9: 16, 10: 20,
+    11: 16, 12: 24
 }
 
 # -----------------------------------------------------------------------------

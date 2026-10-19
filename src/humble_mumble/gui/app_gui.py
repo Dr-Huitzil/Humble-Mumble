@@ -861,9 +861,15 @@ class ReportingStudioApp:
                 self.log("Executive Dashboard tabs generated with charts & KPIs.")
                 if m_id == "extensive":
                     today_str = datetime.now().strftime("%m%d%Y")
-                    tasks_csv = os.path.join("reports", "Tasks", f"flaggedDevices_{today_str}.csv")
+                    out_dir = os.path.dirname(os.path.abspath(out))
+                    parent_dir = os.path.dirname(out_dir) if os.path.basename(out_dir).lower() == "extensive reports" else out_dir
+                    tasks_csv = os.path.join(parent_dir, "Tasks", f"flaggedDevices_{today_str}.csv")
+                    if not os.path.exists(tasks_csv):
+                        tasks_csv = os.path.join("reports", "Tasks", f"flaggedDevices_{today_str}.csv")
                     if os.path.exists(tasks_csv):
                         self.log(f"Google Tasks CSV created: {tasks_csv}")
+                    else:
+                        self.log("Notice: Google Tasks CSV (flagged devices) was not generated.")
 
             elif m_id == "ad_only":
                 self.log(f"Processing Active Directory raw export: {os.path.basename(ad)}...")

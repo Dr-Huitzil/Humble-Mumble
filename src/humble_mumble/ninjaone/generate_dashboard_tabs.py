@@ -1017,11 +1017,12 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
     c_ad_clinic = ad_headers.get("Clinic", 3)
     c_ad_dept = ad_headers.get("Department", 4)
     c_ad_type = ad_headers.get("Device Type", 5)
-    c_ad_os = ad_headers.get("OperatingSystem", 6)
-    c_ad_lastlogon = ad_headers.get("LastLogonDate", 8)
-    c_ad_logondays = ad_headers.get("Last Logon - Days", 9)
-    c_ad_created = ad_headers.get("CreatedDate", 10)
-    c_ad_ou1 = ad_headers.get("OU_Token1", 14)
+    c_ad_os = ad_headers.get("OperatingSystem") or ad_headers.get("Operating System", 6)
+    c_ad_lastlogon = ad_headers.get("LastLogonDate") or ad_headers.get("Last Logon Date", 8)
+    c_ad_logondays = ad_headers.get("Last Logon - Days") or ad_headers.get("Last Logon (Days)", 9)
+    c_ad_created = ad_headers.get("CreatedDate") or ad_headers.get("Created Date", 10)
+    c_ad_createddays = ad_headers.get("Created - Days") or ad_headers.get("Created (Days)", 11)
+    c_ad_ou1 = ad_headers.get("OU_Token1") or ad_headers.get("OU Token 1", 14)
 
     ad_records = []
     for r in range(2, ws_ad.max_row + 1):
@@ -1038,6 +1039,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             "LastLogonDate": str(ws_ad.cell(r, c_ad_lastlogon).value or "").strip(),
             "LastLogonDays": ws_ad.cell(r, c_ad_logondays).value,
             "CreatedDate": str(ws_ad.cell(r, c_ad_created).value or "").strip(),
+            "CreatedDays": ws_ad.cell(r, c_ad_createddays).value if c_ad_createddays else None,
             "OU1": str(ws_ad.cell(r, c_ad_ou1).value or "").strip()
         })
 
@@ -1120,6 +1122,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             "ADStatus": ad_status,
             "ADClinic": ad_clinic,
             "ADLastLogon": ad_logon_date,
+            "ADLastLogonDays": int(ad_days_num) if match_ad and ad_days_num is not None else "",
             "SyncStatus": sync_status,
             "Category": category,
             "Priority": priority,
@@ -1174,7 +1177,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
 
     headers_ad_tbl = [
         "Device", "Ninja Location", "Device Role", "Last User", "Ninja Uptime (Days)",
-        "AD Computer Name", "AD Status", "AD Clinic / OU", "AD Last Logon",
+        "AD Computer Name", "AD Status", "AD Clinic / OU", "AD Last Logon", "AD Last Logon (Days)",
         "Sync Status", "Diagnostic Notes", "Recommended Action"
     ]
     ws_ad_ref.row_dimensions[8].height = 25
@@ -1196,11 +1199,12 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             (item["Location"], align_left, font_tbl_data, bg),
             (item["Role"], align_center, font_tbl_data, bg),
             (item["User"], align_left, font_tbl_data, bg),
-            (item["Uptime"], align_center, font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
+            (item["Uptime"], align_center, font_tbl_data, item["StatusFill"] if item["Priority"] in [1, 3] else bg),
             (item["ADName"], align_center, font_tbl_bold if item["ADName"] == "NOT IN AD" else font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
             (item["ADStatus"], align_center, item["StatusFont"] if item["Priority"] == 1 else font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
             (item["ADClinic"], align_left, font_tbl_data, bg),
             (item["ADLastLogon"], align_center, font_tbl_data, bg),
+            (item["ADLastLogonDays"], align_right, font_tbl_data, bg),
             (item["SyncStatus"], align_center, item["StatusFont"], item["StatusFill"]),
             (item["DiagnosticReason"], align_left, font_tbl_bold if item["Priority"] in [1, 2, 3] else font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
             (item["RecommendedAction"], align_left, item["StatusFont"] if item["Priority"] == 1 else font_tbl_bold, item["StatusFill"] if item["Priority"] == 1 else bg)
@@ -1212,17 +1216,17 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             cell.font = fnt
             cell.fill = fill
             cell.border = thin_border
-            if c_idx == 5:
+            if c_idx in [5, 10] and isinstance(val, (int, float)):
                 cell.number_format = '#,##0'
 
         r_row += 1
 
     # Table 2: Clinic AD Synchronization Summary
-    ws_ad_ref.cell(7, 14).value = "Clinic AD Synchronization Summary"
-    ws_ad_ref.cell(7, 14).font = font_section
+    ws_ad_ref.cell(7, 15).value = "Clinic AD Synchronization Summary"
+    ws_ad_ref.cell(7, 15).font = font_section
 
     headers_loc = ["Clinic / Location", "Fleet Total", "AD Synced", "AD Disabled", "Missing in AD", "Sync %"]
-    for c_idx, h in enumerate(headers_loc, 14):
+    for c_idx, h in enumerate(headers_loc, 15):
         cell = ws_ad_ref.cell(8, c_idx, h)
         cell.font = font_tbl_header
         cell.fill = fill_sub_header
@@ -1246,35 +1250,35 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         st = loc_stats[loc]
         ws_ad_ref.row_dimensions[r_loc].height = 18
         bg_l = fill_zebra if r_loc % 2 == 1 else fill_white
-        ws_ad_ref.cell(r_loc, 14, loc).font = font_tbl_bold
-        ws_ad_ref.cell(r_loc, 14).fill = bg_l
-        ws_ad_ref.cell(r_loc, 14).border = thin_border
-
-        ws_ad_ref.cell(r_loc, 15, st["Total"]).font = font_tbl_data
+        ws_ad_ref.cell(r_loc, 15, loc).font = font_tbl_bold
         ws_ad_ref.cell(r_loc, 15).fill = bg_l
-        ws_ad_ref.cell(r_loc, 15).alignment = align_center
         ws_ad_ref.cell(r_loc, 15).border = thin_border
-        ws_ad_ref.cell(r_loc, 15).number_format = '#,##0'
 
-        ws_ad_ref.cell(r_loc, 16, st["Synced"]).font = font_green if st["Synced"] > 0 else font_tbl_data
-        ws_ad_ref.cell(r_loc, 16).fill = fill_green if st["Synced"] == st["Total"] and st["Total"] > 0 else bg_l
+        ws_ad_ref.cell(r_loc, 16, st["Total"]).font = font_tbl_data
+        ws_ad_ref.cell(r_loc, 16).fill = bg_l
         ws_ad_ref.cell(r_loc, 16).alignment = align_center
         ws_ad_ref.cell(r_loc, 16).border = thin_border
         ws_ad_ref.cell(r_loc, 16).number_format = '#,##0'
 
-        ws_ad_ref.cell(r_loc, 17, st["Disabled"]).font = font_red if st["Disabled"] > 0 else font_tbl_data
-        ws_ad_ref.cell(r_loc, 17).fill = fill_red if st["Disabled"] > 0 else bg_l
+        ws_ad_ref.cell(r_loc, 17, st["Synced"]).font = font_green if st["Synced"] > 0 else font_tbl_data
+        ws_ad_ref.cell(r_loc, 17).fill = fill_green if st["Synced"] == st["Total"] and st["Total"] > 0 else bg_l
         ws_ad_ref.cell(r_loc, 17).alignment = align_center
         ws_ad_ref.cell(r_loc, 17).border = thin_border
         ws_ad_ref.cell(r_loc, 17).number_format = '#,##0'
 
-        ws_ad_ref.cell(r_loc, 18, st["Missing"]).font = font_red if st["Missing"] > 0 else font_tbl_data
-        ws_ad_ref.cell(r_loc, 18).fill = fill_red if st["Missing"] > 0 else bg_l
+        ws_ad_ref.cell(r_loc, 18, st["Disabled"]).font = font_red if st["Disabled"] > 0 else font_tbl_data
+        ws_ad_ref.cell(r_loc, 18).fill = fill_red if st["Disabled"] > 0 else bg_l
         ws_ad_ref.cell(r_loc, 18).alignment = align_center
         ws_ad_ref.cell(r_loc, 18).border = thin_border
         ws_ad_ref.cell(r_loc, 18).number_format = '#,##0'
 
-        cov_cell = ws_ad_ref.cell(r_loc, 19, f"=IF(O{r_loc}>0, P{r_loc}/O{r_loc}, 0)")
+        ws_ad_ref.cell(r_loc, 19, st["Missing"]).font = font_red if st["Missing"] > 0 else font_tbl_data
+        ws_ad_ref.cell(r_loc, 19).fill = fill_red if st["Missing"] > 0 else bg_l
+        ws_ad_ref.cell(r_loc, 19).alignment = align_center
+        ws_ad_ref.cell(r_loc, 19).border = thin_border
+        ws_ad_ref.cell(r_loc, 19).number_format = '#,##0'
+
+        cov_cell = ws_ad_ref.cell(r_loc, 20, f"=IF(P{r_loc}>0, Q{r_loc}/P{r_loc}, 0)")
         cov_cell.font = font_tbl_bold
         cov_cell.fill = bg_l
         cov_cell.alignment = align_center
@@ -1284,11 +1288,11 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         r_loc += 1
 
     # Total row for Table 2
-    ws_ad_ref.cell(r_loc, 14, "FLEET TOTAL").font = font_tbl_total
-    ws_ad_ref.cell(r_loc, 14).fill = fill_total
-    ws_ad_ref.cell(r_loc, 14).border = total_border
+    ws_ad_ref.cell(r_loc, 15, "FLEET TOTAL").font = font_tbl_total
+    ws_ad_ref.cell(r_loc, 15).fill = fill_total
+    ws_ad_ref.cell(r_loc, 15).border = total_border
 
-    for c_offset, c_let in enumerate(["O", "P", "Q", "R"], 15):
+    for c_offset, c_let in enumerate(["P", "Q", "R", "S"], 16):
         cell_t = ws_ad_ref.cell(r_loc, c_offset, f"=SUM({c_let}9:{c_let}{r_loc-1})")
         cell_t.font = font_tbl_total
         cell_t.fill = fill_total
@@ -1296,7 +1300,7 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         cell_t.alignment = align_center
         cell_t.number_format = '#,##0'
 
-    cov_tot = ws_ad_ref.cell(r_loc, 19, f"=IF(O{r_loc}>0, P{r_loc}/O{r_loc}, 0)")
+    cov_tot = ws_ad_ref.cell(r_loc, 20, f"=IF(P{r_loc}>0, Q{r_loc}/P{r_loc}, 0)")
     cov_tot.font = font_tbl_total
     cov_tot.fill = fill_total
     cov_tot.border = total_border
@@ -1305,10 +1309,10 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
 
     # Doughnut Chart for AD Status
     r_chart_data = r_loc + 2
-    ws_ad_ref.cell(r_chart_data, 14, "AD Sync Status").font = font_tbl_header
-    ws_ad_ref.cell(r_chart_data, 14).fill = fill_sub_header
-    ws_ad_ref.cell(r_chart_data, 15, "Count").font = font_tbl_header
+    ws_ad_ref.cell(r_chart_data, 15, "AD Sync Status").font = font_tbl_header
     ws_ad_ref.cell(r_chart_data, 15).fill = fill_sub_header
+    ws_ad_ref.cell(r_chart_data, 16, "Count").font = font_tbl_header
+    ws_ad_ref.cell(r_chart_data, 16).fill = fill_sub_header
 
     chart_cats = [
         ("Synchronized & Active", cnt_synced),
@@ -1316,9 +1320,9 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
         ("Missing from AD", cnt_missing_ad)
     ]
     for idx, (cat_name, cat_cnt) in enumerate(chart_cats, 1):
-        ws_ad_ref.cell(r_chart_data + idx, 14, cat_name).font = font_tbl_bold
-        ws_ad_ref.cell(r_chart_data + idx, 14).border = thin_border
-        c_val = ws_ad_ref.cell(r_chart_data + idx, 15, cat_cnt)
+        ws_ad_ref.cell(r_chart_data + idx, 15, cat_name).font = font_tbl_bold
+        ws_ad_ref.cell(r_chart_data + idx, 15).border = thin_border
+        c_val = ws_ad_ref.cell(r_chart_data + idx, 16, cat_cnt)
         c_val.font = font_tbl_data
         c_val.alignment = align_center
         c_val.border = thin_border
@@ -1329,11 +1333,11 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
     chart_ad.style = 10
     chart_ad.width = 15
     chart_ad.height = 8.5
-    ad_chart_data = Reference(ws_ad_ref, min_col=15, min_row=r_chart_data, max_row=r_chart_data + len(chart_cats))
-    ad_chart_cats = Reference(ws_ad_ref, min_col=14, min_row=r_chart_data + 1, max_row=r_chart_data + len(chart_cats))
+    ad_chart_data = Reference(ws_ad_ref, min_col=16, min_row=r_chart_data, max_row=r_chart_data + len(chart_cats))
+    ad_chart_cats = Reference(ws_ad_ref, min_col=15, min_row=r_chart_data + 1, max_row=r_chart_data + len(chart_cats))
     chart_ad.add_data(ad_chart_data, titles_from_data=True)
     chart_ad.set_categories(ad_chart_cats)
-    ws_ad_ref.add_chart(chart_ad, f"N{r_chart_data + len(chart_cats) + 2}")
+    ws_ad_ref.add_chart(chart_ad, f"O{r_chart_data + len(chart_cats) + 2}")
 
     # Table 3: AD Computers Not Enrolled in Ninja
     r_unm = r_row + 3
@@ -1344,7 +1348,8 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
 
     headers_unm = [
         "AD Computer Name", "AD Status", "Clinic", "Department", "Operating System",
-        "Device Type", "Last Logon Date", "Created Date", "Identified Role / Infrastructure Category"
+        "Device Type", "Last Logon Date", "Last Logon (Days)", "Created Date", "Created (Days)",
+        "Identified Role / Infrastructure Category"
     ]
     ws_ad_ref.row_dimensions[r_unm + 2].height = 25
     for c_idx, h in enumerate(headers_unm, 1):
@@ -1366,7 +1371,9 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             (a["OS"], align_left, font_tbl_data, bg_u),
             (a["DeviceType"], align_center, font_tbl_data, bg_u),
             (a["LastLogonDate"], align_center, font_tbl_data, bg_u),
+            (a["LastLogonDays"], align_right, font_tbl_data, bg_u),
             (a["CreatedDate"], align_center, font_tbl_data, bg_u),
+            (a["CreatedDays"], align_right, font_tbl_data, bg_u),
             (role_ident, align_left, font_tbl_bold, fill_staging if "Server" in role_ident or "Infrastructure" in role_ident else fill_yellow)
         ]
         for c_idx, (val, aln, fnt, fill) in enumerate(row_vals_u, 1):
@@ -1375,13 +1382,16 @@ def _build_ad_cross_ref_tab(wb, inventory_data, total_fleet, sheet_title="AD Cro
             cell.font = fnt
             cell.fill = fill
             cell.border = thin_border
+            if c_idx in [8, 10] and isinstance(val, (int, float)):
+                cell.number_format = '#,##0'
         r_row_u += 1
 
     ws_widths = {
-        1: 18, 2: 24, 3: 16, 4: 20, 5: 14, 6: 18, 7: 14, 8: 24, 9: 20, 10: 24,
-        11: 42, 12: 36, 13: 3, 14: 28, 15: 12, 16: 12, 17: 14, 18: 14, 19: 14
+        1: 18, 2: 24, 3: 16, 4: 20, 5: 14, 6: 18, 7: 14, 8: 24, 9: 20, 10: 16,
+        11: 24, 12: 42, 13: 36, 14: 3, 15: 28, 16: 12, 17: 12, 18: 14, 19: 14, 20: 14
     }
     for c_idx, w in ws_widths.items():
+        ws_ad_ref.column_dimensions[get_column_letter(c_idx)].width = w
         ws_ad_ref.column_dimensions[get_column_letter(c_idx)].width = w
 
     ws_ad_ref.freeze_panes = "C9"
@@ -1397,13 +1407,11 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     c_h_aver = h_headers.get("Agent Version", 4)
     c_h_ever = h_headers.get("EDR Version", 5)
     c_h_intip = h_headers.get("Internal IP", 7)
-    c_h_extip = h_headers.get("External IP", 8)
-    c_h_reg = h_headers.get("Registered", 9)
+    c_h_reg = h_headers.get("Registered", 8)
+    c_h_regdays = h_headers.get("Register - Days") or h_headers.get("Registered - Days", 9)
     c_h_seen = h_headers.get("Last Seen", 10)
-    c_h_sn = h_headers.get("Serial Number", 11)
-    c_h_dom = h_headers.get("AD Domain", 12)
-    c_h_status = h_headers.get("Ninja Status", 13)
-    c_h_inact = h_headers.get("Days Inactive", 14)
+    c_h_seendays = h_headers.get("Last Seen - Days") or h_headers.get("Days Inactive", 11)
+    c_h_sn = h_headers.get("Serial Number", 12)
 
     huntress_records = []
     for r in range(2, ws_hunt.max_row + 1):
@@ -1412,18 +1420,16 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             continue
         huntress_records.append({
             "Agent": str(ag_name).strip(),
-            "Organization": str(ws_hunt.cell(r, c_h_org).value or ""),
-            "OS": str(ws_hunt.cell(r, c_h_os).value or ""),
-            "AgentVersion": str(ws_hunt.cell(r, c_h_aver).value or ""),
-            "EDRVersion": str(ws_hunt.cell(r, c_h_ever).value or ""),
-            "InternalIP": str(ws_hunt.cell(r, c_h_intip).value or ""),
-            "ExternalIP": str(ws_hunt.cell(r, c_h_extip).value or ""),
-            "Registered": str(ws_hunt.cell(r, c_h_reg).value or ""),
-            "LastSeen": str(ws_hunt.cell(r, c_h_seen).value or ""),
-            "Serial": str(ws_hunt.cell(r, c_h_sn).value or "").strip(),
-            "ADDomain": str(ws_hunt.cell(r, c_h_dom).value or ""),
-            "NinjaStatus": str(ws_hunt.cell(r, c_h_status).value or ""),
-            "DaysInactive": ws_hunt.cell(r, c_h_inact).value
+            "Organization": str(ws_hunt.cell(r, c_h_org).value or "") if c_h_org else "",
+            "OS": str(ws_hunt.cell(r, c_h_os).value or "") if c_h_os else "",
+            "AgentVersion": str(ws_hunt.cell(r, c_h_aver).value or "") if c_h_aver else "",
+            "EDRVersion": str(ws_hunt.cell(r, c_h_ever).value or "") if c_h_ever else "",
+            "InternalIP": str(ws_hunt.cell(r, c_h_intip).value or "") if c_h_intip else "",
+            "Registered": str(ws_hunt.cell(r, c_h_reg).value or "") if c_h_reg else "",
+            "RegisteredDays": ws_hunt.cell(r, c_h_regdays).value if c_h_regdays else None,
+            "LastSeen": str(ws_hunt.cell(r, c_h_seen).value or "") if c_h_seen else "",
+            "DaysInactive": ws_hunt.cell(r, c_h_seendays).value if c_h_seendays else None,
+            "Serial": str(ws_hunt.cell(r, c_h_sn).value or "").strip() if c_h_sn else ""
         })
 
     h_by_name = {a["Agent"].upper(): a for a in huntress_records}
@@ -1534,6 +1540,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             "HuntressAgent": h_agent,
             "EDRVersion": h_edr,
             "LastSeen": h_seen,
+            "LastSeenDays": int(h_inact_num) if match_h and h_inact_num is not None else "",
             "ProtectionStatus": prot_status,
             "Category": category,
             "Priority": priority,
@@ -1602,7 +1609,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     headers_hp = [
         "Device", "Location", "Device Role", "Device Model", "Last User",
         "Uptime (Days)", "Huntress Agent Name", "EDR Version", "Huntress Last Seen",
-        "Protection Status", "Root Cause / Diagnostic Notes", "Recommended Action"
+        "Last Seen - Days", "Protection Status", "Root Cause / Diagnostic Notes", "Recommended Action"
     ]
     ws6.row_dimensions[8].height = 25
     for c_idx, h in enumerate(headers_hp, 1):
@@ -1628,6 +1635,7 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             (item["HuntressAgent"], align_center, font_tbl_bold if item["HuntressAgent"] == "NOT INSTALLED" else font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
             (item["EDRVersion"], align_center, font_tbl_data, bg),
             (item["LastSeen"], align_center, font_tbl_data, bg),
+            (item["LastSeenDays"], align_right, font_tbl_data, bg),
             (item["ProtectionStatus"], align_center, item["StatusFont"], item["StatusFill"]),
             (item["DiagnosticReason"], align_left, font_tbl_bold if item["Priority"] in [1, 2, 3] else font_tbl_data, item["StatusFill"] if item["Priority"] == 1 else bg),
             (item["RecommendedAction"], align_left, item["StatusFont"] if item["Priority"] == 1 else font_tbl_bold, item["StatusFill"] if item["Priority"] == 1 else bg)
@@ -1639,17 +1647,17 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             cell.font = fnt
             cell.fill = fill
             cell.border = thin_border
-            if c_idx == 6:
+            if c_idx in [6, 10] and isinstance(val, (int, float)):
                 cell.number_format = '#,##0'
 
         r_hp += 1
 
     # Table 2: Clinic Protection Breakdown
-    ws6.cell(7, 14).value = "Clinic Protection & Coverage Summary"
-    ws6.cell(7, 14).font = font_section
+    ws6.cell(7, 15).value = "Clinic Protection & Coverage Summary"
+    ws6.cell(7, 15).font = font_section
 
     headers_loc = ["Clinic / Location", "Fleet Total", "Protected", "Missing (Online)", "Dropped (>90d)", "Coverage %"]
-    for c_idx, h in enumerate(headers_loc, 14):
+    for c_idx, h in enumerate(headers_loc, 15):
         cell = ws6.cell(8, c_idx, h)
         cell.font = font_tbl_header
         cell.fill = fill_sub_header
@@ -1673,35 +1681,35 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         st = loc_stats[loc]
         ws6.row_dimensions[r_loc].height = 18
         bg_l = fill_zebra if r_loc % 2 == 1 else fill_white
-        ws6.cell(r_loc, 14, loc).font = font_tbl_bold
-        ws6.cell(r_loc, 14).fill = bg_l
-        ws6.cell(r_loc, 14).border = thin_border
-
-        ws6.cell(r_loc, 15, st["Total"]).font = font_tbl_data
+        ws6.cell(r_loc, 15, loc).font = font_tbl_bold
         ws6.cell(r_loc, 15).fill = bg_l
-        ws6.cell(r_loc, 15).alignment = align_center
         ws6.cell(r_loc, 15).border = thin_border
-        ws6.cell(r_loc, 15).number_format = '#,##0'
 
-        ws6.cell(r_loc, 16, st["Protected"]).font = font_green if st["Protected"] > 0 else font_tbl_data
-        ws6.cell(r_loc, 16).fill = fill_green if st["Protected"] == st["Total"] and st["Total"] > 0 else bg_l
+        ws6.cell(r_loc, 16, st["Total"]).font = font_tbl_data
+        ws6.cell(r_loc, 16).fill = bg_l
         ws6.cell(r_loc, 16).alignment = align_center
         ws6.cell(r_loc, 16).border = thin_border
         ws6.cell(r_loc, 16).number_format = '#,##0'
 
-        ws6.cell(r_loc, 17, st["MissingOnline"]).font = font_red if st["MissingOnline"] > 0 else font_tbl_data
-        ws6.cell(r_loc, 17).fill = fill_red if st["MissingOnline"] > 0 else bg_l
+        ws6.cell(r_loc, 17, st["Protected"]).font = font_green if st["Protected"] > 0 else font_tbl_data
+        ws6.cell(r_loc, 17).fill = fill_green if st["Protected"] == st["Total"] and st["Total"] > 0 else bg_l
         ws6.cell(r_loc, 17).alignment = align_center
         ws6.cell(r_loc, 17).border = thin_border
         ws6.cell(r_loc, 17).number_format = '#,##0'
 
-        ws6.cell(r_loc, 18, st["Dropped"]).font = font_purple if st["Dropped"] > 0 else font_tbl_data
-        ws6.cell(r_loc, 18).fill = fill_purple if st["Dropped"] > 0 else bg_l
+        ws6.cell(r_loc, 18, st["MissingOnline"]).font = font_red if st["MissingOnline"] > 0 else font_tbl_data
+        ws6.cell(r_loc, 18).fill = fill_red if st["MissingOnline"] > 0 else bg_l
         ws6.cell(r_loc, 18).alignment = align_center
         ws6.cell(r_loc, 18).border = thin_border
         ws6.cell(r_loc, 18).number_format = '#,##0'
 
-        cov_cell = ws6.cell(r_loc, 19, f"=IF(O{r_loc}>0, P{r_loc}/O{r_loc}, 0)")
+        ws6.cell(r_loc, 19, st["Dropped"]).font = font_purple if st["Dropped"] > 0 else font_tbl_data
+        ws6.cell(r_loc, 19).fill = fill_purple if st["Dropped"] > 0 else bg_l
+        ws6.cell(r_loc, 19).alignment = align_center
+        ws6.cell(r_loc, 19).border = thin_border
+        ws6.cell(r_loc, 19).number_format = '#,##0'
+
+        cov_cell = ws6.cell(r_loc, 20, f"=IF(P{r_loc}>0, Q{r_loc}/P{r_loc}, 0)")
         cov_cell.font = font_tbl_bold
         cov_cell.fill = bg_l
         cov_cell.alignment = align_center
@@ -1711,15 +1719,9 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         r_loc += 1
 
     # Total row for Table 2
-    ws6.cell(r_loc, 14, "FLEET TOTAL").font = font_tbl_total
-    ws6.cell(r_loc, 14).fill = fill_total
-    ws6.cell(r_loc, 14).border = total_border
-
-    ws6.cell(r_loc, 15, f"=SUM(O9:O{r_loc-1})").font = font_tbl_total
+    ws6.cell(r_loc, 15, "FLEET TOTAL").font = font_tbl_total
     ws6.cell(r_loc, 15).fill = fill_total
     ws6.cell(r_loc, 15).border = total_border
-    ws6.cell(r_loc, 15).alignment = align_center
-    ws6.cell(r_loc, 15).number_format = '#,##0'
 
     ws6.cell(r_loc, 16, f"=SUM(P9:P{r_loc-1})").font = font_tbl_total
     ws6.cell(r_loc, 16).fill = fill_total
@@ -1739,18 +1741,24 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     ws6.cell(r_loc, 18).alignment = align_center
     ws6.cell(r_loc, 18).number_format = '#,##0'
 
-    ws6.cell(r_loc, 19, f"=IF(O{r_loc}>0, P{r_loc}/O{r_loc}, 0)").font = font_tbl_total
+    ws6.cell(r_loc, 19, f"=SUM(S9:S{r_loc-1})").font = font_tbl_total
     ws6.cell(r_loc, 19).fill = fill_total
     ws6.cell(r_loc, 19).border = total_border
     ws6.cell(r_loc, 19).alignment = align_center
-    ws6.cell(r_loc, 19).number_format = '0.0%'
+    ws6.cell(r_loc, 19).number_format = '#,##0'
+
+    ws6.cell(r_loc, 20, f"=IF(P{r_loc}>0, Q{r_loc}/P{r_loc}, 0)").font = font_tbl_total
+    ws6.cell(r_loc, 20).fill = fill_total
+    ws6.cell(r_loc, 20).border = total_border
+    ws6.cell(r_loc, 20).alignment = align_center
+    ws6.cell(r_loc, 20).number_format = '0.0%'
 
     # Protection Status Summary & Doughnut Chart
     r_chart_data = r_loc + 2
-    ws6.cell(r_chart_data, 14, "Protection Status").font = font_tbl_header
-    ws6.cell(r_chart_data, 14).fill = fill_sub_header
-    ws6.cell(r_chart_data, 15, "Device Count").font = font_tbl_header
+    ws6.cell(r_chart_data, 15, "Protection Status").font = font_tbl_header
     ws6.cell(r_chart_data, 15).fill = fill_sub_header
+    ws6.cell(r_chart_data, 16, "Device Count").font = font_tbl_header
+    ws6.cell(r_chart_data, 16).fill = fill_sub_header
 
     chart_cats = [
         ("Protected & Active", cnt_total_protected),
@@ -1758,9 +1766,9 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
         ("Dropped from Inactivity (>90d)", cnt_dropped_inact)
     ]
     for idx, (cat_name, cat_cnt) in enumerate(chart_cats, 1):
-        ws6.cell(r_chart_data + idx, 14, cat_name).font = font_tbl_bold
-        ws6.cell(r_chart_data + idx, 14).border = thin_border
-        c_val = ws6.cell(r_chart_data + idx, 15, cat_cnt)
+        ws6.cell(r_chart_data + idx, 15, cat_name).font = font_tbl_bold
+        ws6.cell(r_chart_data + idx, 15).border = thin_border
+        c_val = ws6.cell(r_chart_data + idx, 16, cat_cnt)
         c_val.font = font_tbl_data
         c_val.alignment = align_center
         c_val.border = thin_border
@@ -1771,11 +1779,11 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     chart_hp.style = 10
     chart_hp.width = 15
     chart_hp.height = 8.5
-    hp_data = Reference(ws6, min_col=15, min_row=r_chart_data, max_row=r_chart_data + len(chart_cats))
-    hp_cats = Reference(ws6, min_col=14, min_row=r_chart_data + 1, max_row=r_chart_data + len(chart_cats))
+    hp_data = Reference(ws6, min_col=16, min_row=r_chart_data, max_row=r_chart_data + len(chart_cats))
+    hp_cats = Reference(ws6, min_col=15, min_row=r_chart_data + 1, max_row=r_chart_data + len(chart_cats))
     chart_hp.add_data(hp_data, titles_from_data=True)
     chart_hp.set_categories(hp_cats)
-    ws6.add_chart(chart_hp, f"N{r_chart_data + len(chart_cats) + 2}")
+    ws6.add_chart(chart_hp, f"O{r_chart_data + len(chart_cats) + 2}")
 
     # Table 3: Huntress Endpoints Not Enrolled in Ninja
     r_unm = r_hp + 3
@@ -1786,8 +1794,9 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
 
     headers_unm = [
         "Huntress Agent", "Organization", "Operating System", "Agent Version",
-        "EDR Version", "Internal IP", "External IP", "Last Seen", "Serial Number",
-        "AD Domain", "Identified Role / Infrastructure Category"
+        "EDR Version", "Internal IP", "Registered", "Register - Days",
+        "Last Seen", "Last Seen - Days", "Serial Number",
+        "Identified Role / Infrastructure Category"
     ]
     ws6.row_dimensions[r_unm + 2].height = 25
     for c_idx, h in enumerate(headers_unm, 1):
@@ -1801,6 +1810,19 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
     for a, role_ident in unmanaged_huntress:
         ws6.row_dimensions[r_row_u].height = 18
         bg_u = fill_zebra if r_row_u % 2 == 1 else fill_white
+
+        reg_days_val = a.get("RegisteredDays")
+        try:
+            reg_days_num = int(float(reg_days_val)) if reg_days_val is not None and str(reg_days_val).strip() != "" else ""
+        except (ValueError, TypeError):
+            reg_days_num = ""
+
+        seen_days_val = a.get("DaysInactive")
+        try:
+            seen_days_num = int(float(seen_days_val)) if seen_days_val is not None and str(seen_days_val).strip() != "" else ""
+        except (ValueError, TypeError):
+            seen_days_num = ""
+
         row_vals_u = [
             (a["Agent"], align_left, font_tbl_bold, bg_u),
             (a["Organization"], align_left, font_tbl_data, bg_u),
@@ -1808,10 +1830,11 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             (a["AgentVersion"], align_center, font_tbl_data, bg_u),
             (a["EDRVersion"], align_center, font_tbl_data, bg_u),
             (a["InternalIP"], align_center, font_tbl_data, bg_u),
-            (a["ExternalIP"], align_center, font_tbl_data, bg_u),
+            (a["Registered"], align_center, font_tbl_data, bg_u),
+            (reg_days_num, align_right, font_tbl_data, bg_u),
             (a["LastSeen"], align_center, font_tbl_data, bg_u),
+            (seen_days_num, align_right, font_tbl_data, bg_u),
             (a["Serial"], align_center, font_tbl_data, bg_u),
-            (a["ADDomain"], align_left, font_tbl_data, bg_u),
             (role_ident, align_left, font_tbl_bold, fill_staging if "Server" in role_ident else fill_yellow)
         ]
         for c_idx, (val, aln, fnt, fill) in enumerate(row_vals_u, 1):
@@ -1820,11 +1843,13 @@ def _build_huntress_protection_tab(wb, inventory_data, total_fleet, sheet_title=
             cell.font = fnt
             cell.fill = fill
             cell.border = thin_border
+            if c_idx in [8, 10] and isinstance(val, (int, float)):
+                cell.number_format = '#,##0'
         r_row_u += 1
 
     ws6_widths = {
-        1: 18, 2: 24, 3: 16, 4: 24, 5: 22, 6: 14, 7: 20, 8: 14, 9: 22, 10: 26,
-        11: 42, 12: 36, 13: 3, 14: 28, 15: 12, 16: 12, 17: 16, 18: 16, 19: 14
+        1: 18, 2: 24, 3: 16, 4: 24, 5: 22, 6: 14, 7: 20, 8: 14, 9: 20, 10: 16,
+        11: 26, 12: 42, 13: 36, 14: 3, 15: 28, 16: 12, 17: 12, 18: 16, 19: 16, 20: 14
     }
     for c_idx, w in ws6_widths.items():
         ws6.column_dimensions[get_column_letter(c_idx)].width = w

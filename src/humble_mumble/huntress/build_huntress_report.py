@@ -50,6 +50,9 @@ def parse_huntress_csv(csv_path):
             if not agent_name:
                 continue
 
+            registered_str = get_h('Registered')
+            registered_date = parse_date(registered_str)
+
             last_seen_str = get_h('Last Seen')
             last_seen_date = parse_date(last_seen_str)
             if last_seen_date:
@@ -63,22 +66,28 @@ def parse_huntress_csv(csv_path):
                 "EDRVersion": get_h('EDR Version'),
                 "MacEDREnabled": get_h('MacOS EDR enabled'),
                 "InternalIP": get_h('Internal IP'),
-                "ExternalIP": get_h('External IP'),
-                "Registered": get_h('Registered'),
+                "Registered": registered_str,
+                "RegisteredDate": registered_date,
                 "LastSeen": last_seen_str,
                 "LastSeenDate": last_seen_date,
-                "SerialNumber": get_h('Serial Number'),
-                "ADDomain": get_h('AD Domain')
+                "SerialNumber": get_h('Serial Number')
             })
 
     ref_date = max(today_date, max(parsed_seen_dates)) if parsed_seen_dates else today_date
 
-    # Compute days inactive
+    # Compute days inactive and registered days
     for a in agents:
         if a["LastSeenDate"]:
             a["DaysInactive"] = max(0, (ref_date - a["LastSeenDate"]).days)
+            a["LastSeenDays"] = a["DaysInactive"]
         else:
             a["DaysInactive"] = None
+            a["LastSeenDays"] = None
+
+        if a["RegisteredDate"]:
+            a["RegisteredDays"] = max(0, (ref_date - a["RegisteredDate"]).days)
+        else:
+            a["RegisteredDays"] = None
 
     return agents
 
@@ -108,20 +117,32 @@ def build_huntress_inventory_tab(wb, agents, title="Huntress Agents"):
         bg = config.FILL_ZEBRA_ROW if r_idx % 2 == 0 else config.FILL_WHITE_ROW
         row_vals = [
             a["Agent"], a["Organization"], a["OperatingSystem"], a["AgentVersion"],
-            a["EDRVersion"], a["MacEDREnabled"], a["InternalIP"], a["ExternalIP"],
-            a["Registered"], a["LastSeen"], a["SerialNumber"], a["ADDomain"], a["DaysInactive"]
+            a["EDRVersion"], a["MacEDREnabled"], a["InternalIP"],
+            a["Registered"], a["RegisteredDays"],
+            a["LastSeen"], a["LastSeenDays"],
+            a["SerialNumber"]
         ]
         for c_idx, val in enumerate(row_vals, 1):
             cell = ws_agents.cell(r_idx, c_idx, val)
             cell.font = config.FONT_TBL_DATA
             cell.fill = bg
             cell.border = config.BORDER_THIN
-            cell.alignment = config.ALIGN_LEFT if c_idx in [1, 2, 3] else config.ALIGN_CENTER
+            if c_idx in [1, 2, 3]:
+                cell.alignment = config.ALIGN_LEFT
+            elif c_idx in [9, 11]:  # Register - Days, Last Seen - Days
+                cell.alignment = config.ALIGN_RIGHT
+            else:
+                cell.alignment = config.ALIGN_CENTER
 
-        # Days Inactive alert styling
-        d_val = a["DaysInactive"]
+        # Days number formatting and alert styling
+        reg_d = a["RegisteredDays"]
+        if reg_d is not None:
+            c_reg = ws_agents.cell(r_idx, 9)
+            c_reg.number_format = '#,##0'
+
+        d_val = a["LastSeenDays"]
         if d_val is not None:
-            c_d = ws_agents.cell(r_idx, 13)
+            c_d = ws_agents.cell(r_idx, 11)
             c_d.number_format = '#,##0'
             if d_val > 90:
                 c_d.fill = config.FILL_LAVENDER
@@ -134,7 +155,7 @@ def build_huntress_inventory_tab(wb, agents, title="Huntress Agents"):
         ws_agents.column_dimensions[get_column_letter(c_idx)].width = width
 
     if ws_agents.max_row > 1:
-        tbl_hunt = Table(displayName="Table_HuntressAgents", ref=f"A1:M{ws_agents.max_row}")
+        tbl_hunt = Table(displayName="Table_HuntressAgents", ref=f"A1:L{ws_agents.max_row}")
         tbl_hunt.tableStyleInfo = TableStyleInfo(
             name="TableStyleLight8",
             showFirstColumn=False,
@@ -271,7 +292,7 @@ def build_huntress_dashboard_tab(wb, agents, title="Executive Summary"):
     dormant_agents = sorted([a for a in agents if a["DaysInactive"] is not None and a["DaysInactive"] > 90], key=lambda x: x["DaysInactive"], reverse=True)
     start_wl = max(cur_r + 2, 23)
     ws_sum.cell(start_wl, 2, f"Critical Dormant Watchlist (>90 Days Inactive) — {len(dormant_agents)} Devices").font = config.FONT_SECTION
-    wl_headers = ["Agent Hostname", "Organization", "Operating System", "Last Seen", "Days Inactive", "Serial Number", "AD Domain"]
+    wl_headers = ["Agent Hostname", "Organization", "Operating System", "Last Seen", "Last Seen - Days", "Serial Number"]
     for c_idx, h in enumerate(wl_headers, 2):
         c = ws_sum.cell(start_wl + 1, c_idx, h)
         c.font = config.FONT_TBL_HEADER
@@ -282,13 +303,13 @@ def build_huntress_dashboard_tab(wb, agents, title="Executive Summary"):
 
     cur_wl_r = start_wl + 2
     for da in dormant_agents[:20]:
-        vals = [da["Agent"], da["Organization"], da["OperatingSystem"], da["LastSeen"], da["DaysInactive"], da["SerialNumber"], da["ADDomain"]]
+        vals = [da["Agent"], da["Organization"], da["OperatingSystem"], da["LastSeen"], da["DaysInactive"], da["SerialNumber"]]
         for c_idx, val in enumerate(vals, 2):
             cell = ws_sum.cell(cur_wl_r, c_idx, val)
             cell.font = config.FONT_LAVENDER if c_idx == 6 else config.FONT_TBL_DATA
             cell.fill = config.FILL_LAVENDER
             cell.border = config.BORDER_THIN
-            cell.alignment = config.ALIGN_LEFT if c_idx in [2, 3, 4] else config.ALIGN_CENTER
+            cell.alignment = config.ALIGN_LEFT if c_idx in [2, 3, 4] else (config.ALIGN_RIGHT if c_idx == 6 else config.ALIGN_CENTER)
             if c_idx == 6:
                 cell.number_format = '#,##0'
         cur_wl_r += 1

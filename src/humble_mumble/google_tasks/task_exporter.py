@@ -143,7 +143,7 @@ def parse_flagged_devices_from_workbook(wb, ref_date=None):
         c_h_os = hunt_headers.get("Operating System", 3)
         c_h_seen = hunt_headers.get("Last Seen", 10)
         c_h_sn = hunt_headers.get("Serial Number", 11)
-        c_h_inact = hunt_headers.get("Days Inactive", 14)
+        c_h_inact = hunt_headers.get("Last Seen - Days") or hunt_headers.get("Days Inactive") or hunt_headers.get("Last Seen (Days)", 14)
 
         for r in range(2, ws_hunt.max_row + 1):
             agent = ws_hunt.cell(r, c_h_agent).value

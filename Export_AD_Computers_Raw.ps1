@@ -23,8 +23,57 @@
 
 [CmdletBinding()]
 param(
-    [string]$OutputPath = ".\Computers_Raw_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+    [string]$OutputPath = ""
 )
+
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    # Resolve the repository root / reports directory
+    $reportsBase = $null
+
+    # 1. Check current working directory
+    if (Test-Path ".\reports") {
+        $reportsBase = (Resolve-Path ".\reports").Path
+    }
+
+    # 2. Check script directory hierarchy
+    if (-not $reportsBase -and $PSScriptRoot) {
+        if (Test-Path (Join-Path $PSScriptRoot "reports")) {
+            $reportsBase = (Resolve-Path (Join-Path $PSScriptRoot "reports")).Path
+        } else {
+            $up3 = Join-Path $PSScriptRoot "..\..\.."
+            if (Test-Path (Join-Path $up3 "reports")) {
+                $reportsBase = (Resolve-Path (Join-Path $up3 "reports")).Path
+            }
+        }
+    }
+
+    # Fallback to current working directory
+    if (-not $reportsBase) {
+        $reportsBase = Join-Path (Get-Location).Path "reports"
+    }
+
+    # Check for "AD Reports" (or "AD Report")
+    $adFolder = if (Test-Path (Join-Path $reportsBase "AD Reports")) {
+        "AD Reports"
+    } elseif (Test-Path (Join-Path $reportsBase "AD Report")) {
+        "AD Report"
+    } else {
+        "AD Reports"
+    }
+
+    $rawReportDir = Join-Path $reportsBase (Join-Path $adFolder "raw report")
+    if (-not (Test-Path $rawReportDir)) {
+        New-Item -ItemType Directory -Path $rawReportDir -Force | Out-Null
+    }
+
+    $fileName = "Computers_Raw_$(Get-Date -Format 'yyyyMMdd_HHmmss').csv"
+    $OutputPath = Join-Path $rawReportDir $fileName
+} else {
+    $parentDir = Split-Path -Parent $OutputPath
+    if ($parentDir -and (-not (Test-Path $parentDir))) {
+        New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
+    }
+}
 
 # Ensure ActiveDirectory module is available
 if (-not (Get-Module -ListAvailable -Name ActiveDirectory)) {

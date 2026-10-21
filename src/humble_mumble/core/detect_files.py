@@ -156,6 +156,14 @@ def find_best_ad_csv(search_dirs=None, max_age_days=7):
     if search_dirs is None:
         repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
         search_dirs = [
+            os.path.join(os.getcwd(), "reports", "AD Reports", "raw report"),
+            os.path.join(os.getcwd(), "reports", "AD Report", "raw report"),
+            os.path.join(repo_root, "reports", "AD Reports", "raw report"),
+            os.path.join(repo_root, "reports", "AD Report", "raw report"),
+            os.path.join(os.getcwd(), "reports", "AD Reports"),
+            os.path.join(os.getcwd(), "reports", "AD Report"),
+            os.path.join(repo_root, "reports", "AD Reports"),
+            os.path.join(repo_root, "reports", "AD Report"),
             os.getcwd(),
             os.path.join(os.getcwd(), "data"),
             os.path.join(os.getcwd(), "samples"),

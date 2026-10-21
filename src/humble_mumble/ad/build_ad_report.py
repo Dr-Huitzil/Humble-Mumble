@@ -319,7 +319,11 @@ def build_ad_dashboard_tab(wb, records, title="Executive Summary"):
 def build_report(csv_path, output_xlsx=None, inv_title="Inventory", dash_title="Dashboard"):
     if not output_xlsx:
         timestamp = datetime.now().strftime("%Y%m%d")
-        output_xlsx = f"AD_Computer_Inventory_Report_{timestamp}.xlsx"
+        reports_dir = os.path.join("reports", "AD Reports")
+        if not os.path.exists(reports_dir) and os.path.exists(os.path.join("reports", "AD Report")):
+            reports_dir = os.path.join("reports", "AD Report")
+        os.makedirs(reports_dir, exist_ok=True)
+        output_xlsx = os.path.join(reports_dir, f"AD_Computer_Inventory_Report_{timestamp}.xlsx")
         
     records = parse_ad_csv(csv_path)
     wb = Workbook()
@@ -348,12 +352,29 @@ def main(argv=None):
         target_csv = argv[0]
     else:
         detected = find_best_ad_csv()
-        target_csv = detected.get("ad_raw_file")
+        if isinstance(detected, tuple):
+            target_csv = detected[0] or (detected[1][0] if isinstance(detected[1], tuple) else None)
+        elif isinstance(detected, dict):
+            target_csv = detected.get("ad_raw_file")
+        elif isinstance(detected, str):
+            target_csv = detected
+
         if not target_csv:
-            raw_files = sorted(glob.glob("Computers_Raw_*.csv"), key=os.path.getmtime, reverse=True)
-            if not raw_files:
-                raw_files = sorted(glob.glob(os.path.join("data", "Computers_Raw_*.csv")) + glob.glob(os.path.join("archive", "Computers_Raw_*.csv")), key=os.path.getmtime, reverse=True)
+            search_folders = [
+                os.path.join("reports", "AD Reports", "raw report"),
+                os.path.join("reports", "AD Report", "raw report"),
+                os.path.join("reports", "AD Reports"),
+                os.path.join("reports", "AD Report"),
+                ".",
+                "data",
+                "archive"
+            ]
+            raw_files = []
+            for sf in search_folders:
+                if os.path.exists(sf):
+                    raw_files.extend(glob.glob(os.path.join(sf, "Computers_Raw_*.csv")))
             if raw_files:
+                raw_files = sorted(list(dict.fromkeys(raw_files)), key=os.path.getmtime, reverse=True)
                 target_csv = raw_files[0]
             
     if not target_csv or not os.path.exists(target_csv):

@@ -33,11 +33,11 @@ echo ============================================================
 echo   PIPELINE COMPLETE!
 echo ============================================================
 echo Opening generated report...
-for /f "delims=" %%F in ('dir /b /o:-d AD_Computer_Inventory_Report_*.xlsx 2^>nul') do (
+for /f "delims=" %%F in ('dir /b /s /o:-d "reports\AD Reports\AD_Computer_Inventory_Report_*.xlsx" 2^>nul') do (
     start "" "%%F"
     goto :done
 )
-for /f "delims=" %%F in ('dir /b /s /o:-d "reports\AD Reports\AD_Computer_Inventory_Report_*.xlsx" 2^>nul') do (
+for /f "delims=" %%F in ('dir /b /o:-d AD_Computer_Inventory_Report_*.xlsx 2^>nul') do (
     start "" "%%F"
     goto :done
 )

@@ -388,6 +388,13 @@ class ReportingStudioApp:
         )
         self.btn_sync_google.pack(side="left", padx=(0, 10))
 
+        self.btn_google_sheet = ttk.Button(
+            bottom_frame,
+            text="Google Sheets Laptops...",
+            command=self.open_google_sheets_dialog
+        )
+        self.btn_google_sheet.pack(side="left", padx=(0, 10))
+
         self.btn_open_folder = ttk.Button(
             bottom_frame,
             text="Open Folder Location",
@@ -577,7 +584,19 @@ class ReportingStudioApp:
         self.log("Cleared Huntress CSV input.")
 
     def browse_ad(self):
-        f = filedialog.askopenfilename(title="Select Active Directory Raw Computers CSV", filetypes=[("CSV Files", "Computers_Raw_*.csv;*.csv")])
+        initial_dir = os.path.join(os.getcwd(), "reports", "AD Reports", "raw report")
+        if not os.path.exists(initial_dir):
+            if os.path.exists(os.path.join(os.getcwd(), "reports", "AD Report", "raw report")):
+                initial_dir = os.path.join(os.getcwd(), "reports", "AD Report", "raw report")
+            elif os.path.exists(os.path.join(os.getcwd(), "reports", "AD Reports")):
+                initial_dir = os.path.join(os.getcwd(), "reports", "AD Reports")
+            else:
+                initial_dir = os.getcwd()
+        f = filedialog.askopenfilename(
+            title="Select Active Directory Raw Computers CSV",
+            initialdir=initial_dir,
+            filetypes=[("CSV Files", "Computers_Raw_*.csv;*.csv")]
+        )
         if f:
             self.ad_path.set(os.path.abspath(f))
             self.update_badges()
@@ -700,6 +719,8 @@ class ReportingStudioApp:
         self.btn_run.config(state="disabled")
         self.progress_bar.start(10)
 
+        raw_report_dir = os.path.join(os.getcwd(), "reports", "AD Reports", "raw report")
+        os.makedirs(raw_report_dir, exist_ok=True)
         self.log("--- Executing Active Directory PowerShell Query ---")
         self.log("Running Export_AD_Computers_Raw.ps1 via PowerShell...")
 
@@ -752,7 +773,7 @@ class ReportingStudioApp:
             self.ad_path.set(os.path.abspath(ad_file))
             self.log(f"SUCCESS: Generated and selected {os.path.basename(ad_file)}")
             self.update_badges()
-            messagebox.showinfo("AD Export Complete", f"Active Directory raw CSV export generated successfully!\n\nFile: {os.path.basename(ad_file)}\n\nYou can now generate the executive Excel report.")
+            messagebox.showinfo("AD Export Complete", f"Active Directory raw CSV export generated successfully!\n\nFile: {os.path.basename(ad_file)}\nFolder: reports/AD Reports/raw report/\n\nYou can now generate the executive Excel report.")
         else:
             self.update_badges()
             messagebox.showwarning("Notice", "PowerShell script completed, but the newest CSV could not be automatically located. Please browse manually.")
@@ -940,6 +961,121 @@ class ReportingStudioApp:
                 subprocess.Popen([sys.executable, sync_script])
         except Exception as e:
             messagebox.showerror("Error", f"Could not launch Google Tasks Studio:\n{str(e)}")
+
+    def open_google_sheets_dialog(self):
+        """Opens dialog for Google Sheets Fleet actions (1. API Sync [Default], 2. CSV Backup)."""
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Google Sheets Laptop Fleet")
+        dlg.geometry("520x360")
+        dlg.resizable(False, False)
+        dlg.configure(bg=self.c_bg)
+        dlg.transient(self.root)
+        dlg.grab_set()
+
+        hdr = tk.Frame(dlg, bg=self.c_navy, padx=16, pady=12)
+        hdr.pack(fill="x")
+        tk.Label(
+            hdr,
+            text="Google Sheets Clinic Laptop Fleet",
+            font=("Segoe UI", 12, "bold"),
+            fg="white",
+            bg=self.c_navy
+        ).pack(anchor="w")
+        tk.Label(
+            hdr,
+            text="Target: CSVS Clinic Laptop Inventory (14 Clinic Tabs)",
+            font=("Segoe UI", 9),
+            fg="#D9E2EC",
+            bg=self.c_navy
+        ).pack(anchor="w")
+
+        body = tk.Frame(dlg, bg=self.c_bg, padx=20, pady=16)
+        body.pack(fill="both", expand=True)
+
+        from humble_mumble.ninjaone.google_sheet_fleet import (
+            sync_to_google_sheet_api,
+            export_master_csv,
+            load_google_sheet_config,
+            DEFAULT_SPREADSHEET_ID
+        )
+
+        tk.Label(body, text="Select an action below:", font=("Segoe UI", 9), fg=self.c_text, bg=self.c_bg).pack(anchor="w", pady=(0, 10))
+
+        def do_sync():
+            try:
+                cfg = load_google_sheet_config()
+                sheet_id = cfg.get("spreadsheet_id", DEFAULT_SPREADSHEET_ID)
+                cnt = sync_to_google_sheet_api(sheet_id)
+                messagebox.showinfo(
+                    "Sync Complete",
+                    (f"Successfully synchronized {cnt} clinic laptops directly to Google Sheets!\n\n""All 14 clinic tabs have been updated with zero formula dependencies.\n""You can now sort and filter any column natively in Google Sheets.")
+                )
+            except Exception as e:
+                messagebox.showerror("Sync Error", f"Failed to sync to Google Sheets:\n{e}")
+
+        tk.Button(
+            body,
+            text="🚀  1. Sync Directly to Google Sheets via API (Default)",
+            font=("Segoe UI", 10, "bold"),
+            bg="#2E7D32",
+            fg="white",
+            relief="flat",
+            padx=12,
+            pady=8,
+            cursor="hand2",
+            command=do_sync
+        ).pack(fill="x", pady=(0, 10))
+
+        def do_csv():
+            try:
+                csv_path, cnt = export_master_csv()
+                messagebox.showinfo(
+                    "Backup Complete",
+                    f"Successfully exported {cnt} clinic laptops to CSV backup!\n\nSaved to:\n{csv_path}"
+                )
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export CSV backup:\n{e}")
+
+        tk.Button(
+            body,
+            text="💾  2. Export Master Laptop CSV (Backup)",
+            font=("Segoe UI", 9),
+            bg="#2F5597",
+            fg="white",
+            relief="flat",
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=do_csv
+        ).pack(fill="x", pady=(0, 10))
+
+        def do_open_sheet():
+            import webbrowser
+            cfg = load_google_sheet_config()
+            sheet_id = cfg.get("spreadsheet_id", DEFAULT_SPREADSHEET_ID)
+            webbrowser.open(f"https://docs.google.com/spreadsheets/d/{sheet_id}/edit")
+
+        ttk.Button(
+            body,
+            text="🔗  Open Google Sheet in Browser",
+            command=do_open_sheet
+        ).pack(fill="x", pady=(0, 10))
+
+        def do_open_folder():
+            folder = os.path.join(os.getcwd(), "reports", "Google Sheets")
+            os.makedirs(folder, exist_ok=True)
+            try:
+                os.startfile(folder)
+            except Exception as e:
+                messagebox.showerror("Error", f"Could not open folder:\n{e}")
+
+        ttk.Button(
+            body,
+            text="📁  Open Reports Folder",
+            command=do_open_folder
+        ).pack(fill="x", pady=(0, 12))
+
+        ttk.Button(body, text="Close", command=dlg.destroy).pack(side="right")
 
     def open_output_folder(self):
         out = self.output_path.get()

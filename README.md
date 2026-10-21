@@ -225,6 +225,7 @@ Humble Mumble/
 │
 └── reports/                        # Destination for generated Excel workbooks & tasks
     ├── AD Reports/
+    │   └── raw report/             # Automated destination for Computers_Raw_*.csv exports
     ├── Extensive Reports/
     ├── Huntress Reports/
     ├── Ninja Reports/

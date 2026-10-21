@@ -25,13 +25,24 @@ $RECYCLE.BIN/
 *.log
 
 # Sensitive Google OAuth Credentials & Tokens (Never commit real credentials)
-credentials.json
-token.json
-client_secret_*.json
+credentials*.json
+*credentials*.json
+token*.json
+*token*.json
+client_secret*.json
 
-# Generated Excel Reports
+# Local organization overrides & Google Sheets configuration
+google_sheets_config*.json
+organization_config*.json
+*config*.local.json
+.env
+.env.*
+.env.local
+
+# Generated Excel & CSV Reports
 reports/**/*.xlsx
 reports/**/*.csv
+reports/**/raw report/
 *.xlsx
 
 # Local Data Dumps (Protect proprietary fleet data)
@@ -46,8 +57,3 @@ Computers_Raw_*.csv
 # Whitelist synthetic mock samples & folder markers
 !samples/*.csv
 !reports/**/.gitkeep
-
-# Local organization overrides
-organization_config.local.json
-.env
-.env.local
